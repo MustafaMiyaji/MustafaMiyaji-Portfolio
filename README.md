@@ -1,5 +1,5 @@
 
-# 🌐 The Neural Grid | Mustafa Alimiyaji
+# 🌐 The Neural Grid | Mustafa Miyaji
 
 ![License](https://img.shields.io/badge/license-MIT-cyan.svg)
 ![React](https://img.shields.io/badge/react-18.x-blue.svg)
@@ -18,6 +18,7 @@ The **Neural Grid** is a conceptual portfolio designed to bridge the gap between
 
 *   **🧠 Neural Particle Engine**: Custom HTML5 Canvas simulation (`Background.tsx`) featuring mouse repulsion, node networking, and fluid dynamics.
 *   **🧲 Magnetic UI**: Interactive elements (`CustomCursor.tsx`, `MagneticButton`) that physically react to cursor proximity using spring physics.
+*   **🔊 Sonic Architecture**: Web Audio API integration generating real-time UI sounds (clicks, hovers, ambient).
 *   **🔐 Cyber-Security Aesthetic**: Glitch text decoding, terminal-style chat interfaces, and biometric scanning animations.
 *   **📂 Holographic Cert Vault**: A 3D stacked card interface (`CertStack.tsx`) with parallax depth and neon glow effects.
 *   **🚀 Performance First**: GPU-accelerated animations, Vite-powered build tooling, and optimized React rendering.
@@ -80,4 +81,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-*Architected by Mustafa Alimiyaji © 2026*
+*Architected by Mustafa Miyaji © 2026*

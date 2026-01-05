@@ -1,9 +1,9 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { motion, useTransform, useScroll, MotionValue, useMotionValueEvent, useMotionValue, useSpring } from 'framer-motion';
-import { Activity, ArrowDown, Cpu, Lock, Unlock, Wifi, Shield } from 'lucide-react';
+import { motion, useTransform, useScroll, useMotionValueEvent, useMotionValue, useSpring, MotionValue, AnimatePresence } from 'framer-motion';
+import { ArrowDown, Shield, Scan, Lock, Unlock } from 'lucide-react';
+import { useSound } from './SoundManager';
 
-// Added cybernetic symbols to the pool
 const LETTERS_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ΞΠΣΩλΔ∇ΦΨ";
 
 interface ScrambleCharProps {
@@ -20,68 +20,38 @@ const ScrambleChar: React.FC<ScrambleCharProps> = ({ char, index, progress, mous
   const [isLocked, setIsLocked] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Magnetic Repulsion Logic
-  const distance = useTransform([mouseX, mouseY], ([latestX, latestY]: any[]) => {
-    if (!ref.current) return 0;
-    const rect = ref.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const dist = Math.sqrt(Math.pow(latestX - centerX, 2) + Math.pow(latestY - centerY, 2));
-    return dist;
-  });
-
-  const repelX = useTransform([mouseX, distance], ([latestX, dist]: any[]) => {
-     if (!ref.current || dist > 200) return 0;
-     const rect = ref.current.getBoundingClientRect();
-     const centerX = rect.left + rect.width / 2;
-     return ((centerX - latestX) / dist) * 50; 
-  });
-  const repelY = useTransform([mouseY, distance], ([latestY, dist]: any[]) => {
-     if (!ref.current || dist > 200) return 0;
-     const rect = ref.current.getBoundingClientRect();
-     const centerY = rect.top + rect.height / 2;
-     return ((centerY - latestY) / dist) * 50; 
-  });
-  
-  const smoothRepelX = useSpring(repelX, { stiffness: 150, damping: 15 });
-  const smoothRepelY = useSpring(repelY, { stiffness: 150, damping: 15 });
-
+  // --- RESTORED CHAOS LOGIC ---
+  // Calculates random start positions for the fly-in effect on every mount
   const chaos = useMemo(() => {
+    // Random angle for direction
     const angle = (index * 137.5) + (Math.random() * 360);
-    const distance = 800 + (Math.random() * 400); 
-    const zDepth = 600 + (Math.random() * 800);
+    // Random distance from center
+    const distance = 600 + (Math.random() * 800); 
+    // Random Z depth
+    const zDepth = 400 + (Math.random() * 1200);
     
     return {
-      startX: Math.cos(angle) * distance,
-      startY: Math.sin(angle) * distance,
+      startX: Math.cos(angle * (Math.PI / 180)) * distance,
+      startY: Math.sin(angle * (Math.PI / 180)) * distance,
       startZ: zDepth * (Math.random() > 0.5 ? 1 : -1),
-      rotation: Math.random() * 360 - 180,
+      startRotate: (Math.random() - 0.5) * 360,
     };
   }, [index]);
 
-  const x = useTransform(progress, [0, 0.5], [chaos.startX, 0]);
-  const y = useTransform(progress, [0, 0.5], [chaos.startY, 0]);
-  const z = useTransform(progress, [0, 0.5], [chaos.startZ, 0]);
-  const rotate = useTransform(progress, [0, 0.5], [chaos.rotation, 0]);
-  const opacity = useTransform(progress, [0, 0.2, 0.5], [0, 1, 1]);
+  // Transform scroll progress (0 to 0.5) into movement from chaos -> fixed
+  const x = useTransform(progress, [0, 0.6], [chaos.startX, 0]);
+  const y = useTransform(progress, [0, 0.6], [chaos.startY, 0]);
+  const z = useTransform(progress, [0, 0.6], [chaos.startZ, 0]);
+  const rotate = useTransform(progress, [0, 0.6], [chaos.startRotate, 0]);
+  const opacity = useTransform(progress, [0, 0.2, 0.6], [0, 1, 1]);
 
-  const textShadow = useTransform(progress, 
-    [0, 0.4, 0.5], 
-    ["-2px 0px red, 2px 0px cyan", "-4px 0px red, 4px 0px cyan", "0px 0px transparent"]
-  );
-
-  const filter = useTransform(progress, [0, 0.4, 0.5], ["blur(30px) brightness(2)", "blur(10px) brightness(1.5)", "blur(0px) brightness(1)"]);
-
-  // Scramble and Glitch Effect
+  // Glitch Effect
   useEffect(() => {
     if (char === " ") return;
     let interval: ReturnType<typeof setInterval>;
-    
-    // Initial entry glitch or scroll trigger
     if (triggerGlitch) {
         let count = 0;
-        const maxCount = 15 + Math.random() * 10; // Number of swaps before settling
-        
+        const maxCount = 8 + Math.random() * 5;
         interval = setInterval(() => {
             setDisplayChar(LETTERS_POOL[Math.floor(Math.random() * LETTERS_POOL.length)]);
             count++;
@@ -89,12 +59,12 @@ const ScrambleChar: React.FC<ScrambleCharProps> = ({ char, index, progress, mous
                 setDisplayChar(char);
                 clearInterval(interval);
             }
-        }, 50); 
+        }, 60); 
     } else {
         if (!isLocked) {
           interval = setInterval(() => {
             setDisplayChar(LETTERS_POOL[Math.floor(Math.random() * LETTERS_POOL.length)]);
-          }, 50);
+          }, 80);
         } else {
           setDisplayChar(char);
         }
@@ -102,13 +72,14 @@ const ScrambleChar: React.FC<ScrambleCharProps> = ({ char, index, progress, mous
     return () => clearInterval(interval);
   }, [char, isLocked, triggerGlitch]);
 
+  // Lock characters as they arrive
   useMotionValueEvent(progress, "change", (v) => {
     if (!triggerGlitch) {
-        if (v > 0.48 && !isLocked) {
+        if (v > 0.55 && !isLocked) {
             setIsLocked(true);
             setDisplayChar(char);
         }
-        if (v < 0.45 && isLocked) setIsLocked(false);
+        if (v < 0.5 && isLocked) setIsLocked(false);
     }
   });
 
@@ -116,32 +87,83 @@ const ScrambleChar: React.FC<ScrambleCharProps> = ({ char, index, progress, mous
     <motion.div
       ref={ref}
       className="relative inline-block transform-style-3d will-change-transform"
-      style={{ 
-        x: useTransform(() => x.get() + smoothRepelX.get()), 
-        y: useTransform(() => y.get() + smoothRepelY.get()), 
-        z, 
-        rotate, 
-        opacity,
-        filter,
-        textShadow
-      }}
-      animate={triggerGlitch ? {
-        scale: [1, 1.1, 0.9, 1], // Subtle distortion on entry
-        skewX: [0, -10, 10, 0],
-      } : {}}
-      transition={{ duration: 0.5 }}
+      style={{ x, y, z, rotate, opacity }}
     >
-      <span className="text-6xl md:text-9xl font-black font-display leading-none text-cyber-text dark:text-white select-none">
+      <span className="text-[2.2rem] xs:text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-black font-display leading-none text-slate-800 dark:text-cyber-text dark:text-white select-none transition-colors duration-500">
         {char === " " ? "\u00A0" : displayChar}
       </span>
     </motion.div>
   );
 };
 
+// Decoder Text Component
+const DecoderText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
+    const [decoded, setDecoded] = useState("");
+    
+    useEffect(() => {
+        let iteration = 0;
+        const interval = setInterval(() => {
+            setDecoded(text.split("").map((letter, index) => {
+                if(index < iteration) return text[index];
+                return LETTERS_POOL[Math.floor(Math.random() * 26)];
+            }).join(""));
+            
+            if(iteration >= text.length) clearInterval(interval);
+            iteration += 1/3; 
+        }, 30);
+        return () => clearInterval(interval);
+    }, [text]);
+
+    return <span className={className}>{decoded}</span>;
+}
+
+// 3D Tilt Container for Main Text
+const TiltContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+    const rotateX = useTransform(y, [-300, 300], [15, -15]);
+    const rotateY = useTransform(x, [-300, 300], [-15, 15]);
+    
+    // Smooth physics
+    const springConfig = { damping: 30, stiffness: 200 };
+    const springRotateX = useSpring(rotateX, springConfig);
+    const springRotateY = useSpring(rotateY, springConfig);
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        x.set(e.clientX - centerX);
+        y.set(e.clientY - centerY);
+    };
+
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+    };
+
+    return (
+        <motion.div
+            style={{ perspective: 1000 }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            className="flex flex-col items-center justify-center cursor-default py-10"
+        >
+            <motion.div
+                style={{ rotateX: springRotateX, rotateY: springRotateY, transformStyle: 'preserve-3d' }}
+                className="flex flex-wrap justify-center gap-1 md:gap-4 lg:gap-6 px-4 text-center max-w-[100vw]"
+            >
+                {children}
+            </motion.div>
+        </motion.div>
+    );
+}
+
 const Hero: React.FC = () => {
   const containerRef = useRef<HTMLElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  const { playHover } = useSound();
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -150,7 +172,7 @@ const Hero: React.FC = () => {
 
   const [percent, setPercent] = useState(0);
   const [isGlitching, setIsGlitching] = useState(true);
-  const [hasScrolledPastHalf, setHasScrolledPastHalf] = useState(false);
+  const [hasScrolledPastHalf, setHasStartedPastHalf] = useState(false);
 
   const hudOpacity = useTransform(scrollYProgress, [0.7, 0.85], [1, 0]);
   const gateScale = useTransform(scrollYProgress, [0.85, 1], [1, 0.9]);
@@ -161,79 +183,70 @@ const Hero: React.FC = () => {
     const p = Math.min(100, Math.max(0, Math.floor((v / 0.5) * 100)));
     setPercent(p);
     
-    // Trigger secondary glitch strictly when crossing 0.55 threshold
     if (v > 0.55 && v < 0.8 && !hasScrolledPastHalf) {
-        setHasScrolledPastHalf(true);
+        setHasStartedPastHalf(true);
         setIsGlitching(true);
-        setTimeout(() => setIsGlitching(false), 800); // Transient burst
+        setTimeout(() => setIsGlitching(false), 800);
     }
     
     if (v < 0.4) {
-        setHasScrolledPastHalf(false);
+        setHasStartedPastHalf(false);
     }
   });
 
-  // Trigger initial glitch on mount
   useEffect(() => {
     setIsGlitching(true);
-    // Longer initial duration for the symbol swap effect
     const timer = setTimeout(() => {
         setIsGlitching(false);
     }, 1500);
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-        mouseX.set(e.clientX);
-        mouseY.set(e.clientY);
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+  const triggerManualGlitch = () => {
+      setIsGlitching(true);
+      playHover();
+      setTimeout(() => setIsGlitching(false), 800);
+  };
 
-  const name = "MUSTAFA";
+  const name = "MUSTAFA MIYAJI";
 
   return (
     <section id="hero" ref={containerRef} className="relative w-full h-[300vh] z-50">
       <div className="sticky top-0 h-screen w-full overflow-hidden perspective-2000">
         
-        {/* The Gate Container */}
         <motion.div 
             style={{ scale: gateScale, opacity: gateOpacity, y: gateY }}
-            className="relative w-full h-full flex flex-col justify-center items-center bg-cyber-ceramic dark:bg-cyber-space shadow-2xl transition-colors duration-500"
+            className="relative w-full h-full flex flex-col justify-center items-center bg-cyber-ceramic dark:bg-cyber-space shadow-2xl transition-colors duration-500 overflow-hidden"
         >
-            {/* Background Grid Pattern */}
-            <div className="absolute inset-0 opacity-[0.05] pointer-events-none">
-                <div className="h-full w-full bg-[linear-gradient(to_right,#00000012_1px,transparent_1px),linear-gradient(to_bottom,#00000012_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff12_1px,transparent_1px),linear-gradient(to_bottom,#ffffff12_1px,transparent_1px)] bg-[size:40px_40px]" />
+            {/* Core Animation Behind Text */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none opacity-20 dark:opacity-40">
+                <motion.div 
+                    className="w-full h-full border border-cyan-500/20 rounded-full"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 20, ease: "linear", repeat: Infinity }}
+                />
+                <motion.div 
+                    className="absolute inset-10 border border-purple-500/20 rounded-full"
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 15, ease: "linear", repeat: Infinity }}
+                />
             </div>
 
-            {/* HUD Elements */}
             <motion.div 
                 style={{ opacity: hudOpacity }}
-                className="absolute inset-0 p-8 md:p-12 flex flex-col justify-between pointer-events-none z-20"
+                className="absolute inset-0 p-6 md:p-12 flex flex-col justify-between pointer-events-none z-20"
             >
-                {/* Top Bar */}
+                {/* Top Bar HUD */}
                 <div className="flex justify-between items-start">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2 text-xs font-mono text-cyan-700 dark:text-cyan-400">
                             <Shield size={14} /> 
-                            <span className="tracking-[0.2em]">SECURE_GATEWAY_V4</span>
-                        </div>
-                        <div className="text-[10px] font-mono text-slate-500 dark:text-slate-500 uppercase tracking-widest">
-                            {percent === 100 ? 'SYSTEM_LOCKED' : 'CALIBRATING_NEURAL_LINK...'}
-                        </div>
-                    </div>
-                    
-                    <div className="flex flex-col items-end gap-2">
-                        <div className={`flex items-center gap-2 text-xs font-mono transition-colors ${percent === 100 ? 'text-green-600 dark:text-green-500' : 'text-amber-600 dark:text-amber-500'}`}>
-                            {percent === 100 ? <Wifi size={14} /> : <Activity size={14} className="animate-pulse" />}
-                            {percent === 100 ? 'ONLINE' : 'SYNCING'}
+                            <span className="tracking-[0.2em]">SECURE_GATEWAY_V4.2</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Bottom Bar */}
+                {/* Bottom Bar HUD */}
                 <div className="flex flex-col items-center gap-4">
                      <div className="w-48 h-1 bg-slate-300 dark:bg-slate-800 rounded-full overflow-hidden">
                         <motion.div 
@@ -247,23 +260,23 @@ const Hero: React.FC = () => {
                      </div>
                 </div>
             </motion.div>
+            
+            <TiltContainer>
+                <div className="flex flex-wrap justify-center gap-1 md:gap-4 lg:gap-6" onMouseEnter={triggerManualGlitch}>
+                    {name.split("").map((c, i) => (
+                        <ScrambleChar 
+                            key={i} 
+                            char={c} 
+                            index={i} 
+                            progress={scrollYProgress} 
+                            mouseX={mouseX} 
+                            mouseY={mouseY}
+                            triggerGlitch={isGlitching}
+                        />
+                    ))}
+                </div>
+            </TiltContainer>
 
-            {/* Name Formation */}
-            <div className="z-10 flex flex-wrap justify-center gap-2 md:gap-8 lg:gap-12 transform-style-3d cursor-default">
-                {name.split("").map((c, i) => (
-                    <ScrambleChar 
-                        key={i} 
-                        char={c} 
-                        index={i} 
-                        progress={scrollYProgress} 
-                        mouseX={mouseX} 
-                        mouseY={mouseY}
-                        triggerGlitch={isGlitching}
-                    />
-                ))}
-            </div>
-
-            {/* Subtext Reveal */}
             <motion.div 
                 style={{ 
                     opacity: useTransform(scrollYProgress, [0.55, 0.65], [0, 1]),
@@ -272,11 +285,11 @@ const Hero: React.FC = () => {
                 className="absolute bottom-[20vh] text-center max-w-2xl px-6 z-20"
             >
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 mb-6 backdrop-blur-md">
-                    <Cpu size={12} className="text-cyan-700 dark:text-cyan-500" />
+                    <Scan size={12} className="text-cyan-700 dark:text-cyan-500" />
                     <span className="text-[9px] font-mono text-cyan-800 dark:text-cyan-400 uppercase tracking-widest">Architect Verified</span>
                 </div>
-                <h2 className="text-2xl md:text-3xl font-light text-slate-800 dark:text-slate-200 font-display leading-tight">
-                    "Crafting resilient digital architectures for the <span className="text-cyan-700 dark:text-cyan-400 font-medium">next generation</span>."
+                <h2 className="text-xl md:text-3xl font-light text-slate-800 dark:text-slate-200 font-display leading-tight">
+                    <DecoderText text="Crafting resilient digital architectures for the next generation." className="block" />
                 </h2>
                 
                 <motion.div 

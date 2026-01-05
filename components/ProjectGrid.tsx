@@ -1,8 +1,10 @@
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { X, ArrowUpRight, Code2 } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, LayoutGroup } from 'framer-motion';
+import { X, ArrowUpRight, Code2, Filter } from 'lucide-react';
 import { Project } from '../types';
+import { useSound } from './SoundManager';
+import { useToast } from './ToastSystem';
 
 const projects: Project[] = [
   {
@@ -47,6 +49,8 @@ const projects: Project[] = [
   }
 ];
 
+const categories = ['ALL', 'AI AGENT', 'SAAS', 'WEB3 DEVOPS', 'AWS INFRA'];
+
 const TechBadge: React.FC<{ label: string; index: number }> = ({ label, index }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
@@ -63,6 +67,7 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const [isHovered, setIsHovered] = useState(false);
+  const { playHover, playClick } = useSound();
 
   const rotateX = useSpring(useTransform(y, [-100, 100], [5, -5]), { stiffness: 400, damping: 30 });
   const rotateY = useSpring(useTransform(x, [-100, 100], [-5, 5]), { stiffness: 400, damping: 30 });
@@ -73,7 +78,7 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
     y.set(e.clientY - (rect.top + rect.height / 2));
   }
 
-  // Dynamic Text Shadow: Moves in opposition to the light source to simulate lift
+  // Dynamic Text Shadow
   const textShadowX = useTransform(x, [-200, 200], [8, -8]);
   const textShadowY = useTransform(y, [-200, 200], [8, -8]);
   
@@ -81,58 +86,59 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
 
   return (
     <motion.div
+      layout
       style={{ rotateX, rotateY, perspective: 1000 }}
       onMouseMove={handleMouse}
       onMouseLeave={() => { x.set(0); y.set(0); setIsHovered(false); }}
-      onMouseEnter={() => setIsHovered(true)}
-      onClick={onClick}
-      // Add data-cursor attribute for magnetic effect
+      onMouseEnter={() => { setIsHovered(true); playHover(); }}
+      onClick={() => { onClick(); playClick(); }}
       data-cursor="magnetic" 
-      className="group relative h-[450px] rounded-[2rem] overflow-hidden cursor-none border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-cyber-dark transform-style-3d shadow-xl hover:shadow-2xl transition-all duration-500 hover:border-cyan-500/50"
+      className="group relative h-[380px] md:h-[450px] rounded-[2rem] overflow-hidden cursor-none border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-cyber-dark transform-style-3d shadow-xl hover:shadow-2xl transition-all duration-500 hover:border-cyan-500/50"
     >
+      {/* Laser Scan Animation */}
+      <motion.div 
+         className="absolute w-full h-[2px] bg-cyan-400 z-50 opacity-0 group-hover:opacity-100"
+         animate={isHovered ? { top: ['0%', '100%'], opacity: [0, 1, 0] } : {}}
+         transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+         style={{ boxShadow: '0 0 10px #22d3ee' }}
+      />
+
       <div className="absolute inset-0 z-0 bg-slate-900 overflow-hidden">
-        <img 
+        {/* Main Image */}
+        <motion.img 
             src={project.image} 
             alt={project.headline} 
-            className="w-full h-full object-cover transition-all duration-700 opacity-80 group-hover:opacity-40 group-hover:scale-110 group-hover:brightness-50" 
+            className="w-full h-full object-cover relative z-10"
+            animate={{
+                scale: isHovered ? 1.1 : 1,
+                filter: isHovered ? 'brightness(0.4) saturate(1.2)' : 'brightness(0.9) saturate(1)'
+            }}
+            transition={{ duration: 0.7 }}
         />
       </div>
 
-      {/* Dark overlay for contrast */}
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent z-10" />
 
-      {/* Dynamic Glare Effect - Pulsing when idle */}
+      {/* Enhanced Active Glare with Pulse when Idle */}
       <motion.div 
         className="absolute inset-0 z-20 pointer-events-none mix-blend-overlay"
         animate={{
-            opacity: isHovered ? [0.2, 0.4, 0.2] : [0, 0.1, 0], // Pulse when idle
-            backgroundPosition: isHovered ? ["0% 0%", "100% 100%"] : ["0% 0%", "50% 50%"]
+            opacity: isHovered ? [0.4, 0.8, 0.4] : [0, 0.1, 0], // Subtle pulse even when not hovered
+            backgroundPosition: isHovered ? ["0% 0%", "100% 100%"] : ["0% 0%", "20% 20%"]
         }}
         transition={{
-            opacity: { duration: isHovered ? 2 : 4, repeat: Infinity, ease: "easeInOut" },
-            backgroundPosition: { duration: 8, repeat: Infinity, ease: "linear" }
+            opacity: { duration: isHovered ? 1.5 : 4, repeat: Infinity, ease: "easeInOut" },
+            backgroundPosition: { duration: isHovered ? 4 : 20, repeat: Infinity, ease: "linear" }
         }}
         style={{
             background: isHovered 
                 ? "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%)"
-                : "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%)",
+                : "radial-gradient(circle at 50% 50%, rgba(6,182,212,0.3) 0%, rgba(255,255,255,0) 70%)",
             x: useTransform(x, [-100, 100], [-50, 50]),
             y: useTransform(y, [-100, 100], [-50, 50]),
         }}
       />
-      
-      {/* Spotlight for Hover State */}
-      <motion.div
-        className="absolute inset-0 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        style={{
-            background: useTransform(
-                [x, y],
-                ([latestX, latestY]: any[]) => `radial-gradient(400px circle at ${latestX + 200}px ${latestY + 225}px, rgba(255,255,255,0.15), transparent 80%)`
-            )
-        }}
-      />
 
-      {/* Floating Tech Stack on Top Right */}
       <div className="absolute top-6 right-6 z-30 flex flex-col gap-2 items-end">
           <AnimatePresence>
             {isHovered && techStack.map((tech, i) => (
@@ -148,28 +154,29 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
              <span className="text-[10px] font-mono text-cyan-400 tracking-[0.2em] uppercase shadow-black drop-shadow-md">{project.badge}</span>
           </div>
           
-          {/* Headline with Lifting Text Shadow */}
-          <motion.h3 
-            className="text-3xl font-bold text-white font-display tracking-tight drop-shadow-lg transform transition-transform duration-300 group-hover:-translate-y-2"
-            style={{ 
-               textShadow: useTransform(
-                 [textShadowX, textShadowY],
-                 ([sX, sY]: any) => isHovered ? `${sX}px ${sY}px 20px rgba(0,0,0,0.8)` : '0px 0px 0px rgba(0,0,0,0)'
-               )
-            }}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={isHovered ? { y: 0, opacity: 1 } : { y: 10, opacity: 0.8 }}
+            transition={{ duration: 0.5 }}
           >
-            {project.headline}
-          </motion.h3>
+              <motion.h3 
+                className="text-2xl md:text-3xl font-bold text-white font-display tracking-tight drop-shadow-lg"
+                style={{ 
+                textShadow: useTransform(
+                    [textShadowX, textShadowY],
+                    ([sX, sY]: any) => isHovered ? `${sX}px ${sY}px 20px rgba(0,0,0,0.8)` : '0px 0px 0px rgba(0,0,0,0)'
+                )
+                }}
+              >
+                {project.headline}
+              </motion.h3>
+          </motion.div>
           
           <div className="overflow-hidden">
             <motion.p 
-                className="text-sm text-slate-300 line-clamp-2 max-w-sm transform translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 delay-75 ease-out"
-                style={{ 
-                   textShadow: useTransform(
-                     [textShadowX, textShadowY],
-                     ([sX, sY]: any) => isHovered ? `${sX/2}px ${sY/2}px 10px rgba(0,0,0,0.8)` : '0px 0px 0px rgba(0,0,0,0)'
-                   )
-                }}
+                className="text-xs md:text-sm text-slate-300 line-clamp-2 max-w-sm"
+                animate={isHovered ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
             >
                 {project.description}
             </motion.p>
@@ -188,29 +195,54 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
 
 const ProjectGrid: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState('ALL');
   const selectedProject = projects.find(p => p.id === selectedId);
+  const { playClick } = useSound();
+
+  const filteredProjects = projects.filter(p => filter === 'ALL' || p.badge === filter);
 
   return (
-    <section id="projects" className="py-32 px-4 w-full relative z-10">
+    <section id="projects" className="py-32 px-4 md:px-6 w-full relative z-10">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-20 flex flex-col items-center text-center">
+        <div className="mb-16 flex flex-col items-center text-center">
            <motion.div 
              initial={{ opacity: 0, y: 20 }}
              whileInView={{ opacity: 1, y: 0 }}
-             className="text-[10px] font-mono text-cyan-700 dark:text-cyan-400 tracking-[1em] uppercase mb-4"
+             className="flex items-center gap-2 mb-4"
            >
-             Portfolio_Index
+             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+             <span className="text-[10px] font-mono text-cyan-700 dark:text-cyan-400 tracking-[1em] uppercase">Portfolio_Index</span>
            </motion.div>
-           <h2 className="text-5xl md:text-7xl font-bold text-cyber-text dark:text-white font-display uppercase tracking-tight">
+           
+           <h2 className="text-4xl md:text-5xl lg:text-7xl font-bold text-slate-900 dark:text-white font-display uppercase tracking-tight mb-8">
              Selected Works
            </h2>
+           
+           {/* Filters */}
+           <div className="flex flex-wrap justify-center gap-2">
+                {categories.map((cat) => (
+                    <button
+                        key={cat}
+                        onClick={() => { setFilter(cat); playClick(); }}
+                        className={`px-4 py-2 rounded-full text-[10px] font-mono tracking-wider border transition-all duration-300 
+                            ${filter === cat 
+                                ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg shadow-cyan-500/20' 
+                                : 'bg-transparent text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:border-cyan-500/50 hover:text-cyan-600 dark:hover:text-cyan-400'
+                            }`}
+                    >
+                        {cat}
+                    </button>
+                ))}
+           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {projects.map(p => (
-            <ProjectCard key={p.id} project={p} onClick={() => setSelectedId(p.id)} />
-          ))}
-        </div>
+        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          <AnimatePresence>
+            {filteredProjects.map(p => (
+                <ProjectCard key={p.id} project={p} onClick={() => setSelectedId(p.id)} />
+            ))}
+          </AnimatePresence>
+        </motion.div>
 
         <AnimatePresence>
           {selectedId && selectedProject && (
@@ -219,26 +251,26 @@ const ProjectGrid: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={() => setSelectedId(null)}
+                onClick={() => { setSelectedId(null); playClick(); }}
                 className="absolute inset-0 bg-slate-900/90 dark:bg-black/90 backdrop-blur-xl"
               />
               <motion.div 
                 layoutId={`card-${selectedId}`}
-                className="relative w-full max-w-6xl bg-white dark:bg-[#0a0a0a] rounded-[2.5rem] overflow-hidden border border-slate-200 dark:border-white/10 shadow-2xl flex flex-col lg:flex-row h-full max-h-[85vh]"
+                className="relative w-full max-w-6xl bg-white dark:bg-[#0a0a0a] rounded-[2.5rem] overflow-hidden border border-slate-200 dark:border-white/10 shadow-2xl flex flex-col lg:flex-row h-full max-h-[85vh] lg:max-h-[800px]"
               >
-                 <div className="w-full lg:w-1/2 h-[300px] lg:h-full relative overflow-hidden bg-slate-800">
+                 <div className="w-full lg:w-1/2 h-[200px] lg:h-full relative overflow-hidden bg-slate-800">
                     <img src={selectedProject.image} className="w-full h-full object-cover" alt="" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                  </div>
                  
-                 <div className="w-full lg:w-1/2 p-8 lg:p-16 overflow-y-auto">
-                    <button onClick={() => setSelectedId(null)} className="absolute top-6 right-6 p-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-full transition-colors text-slate-900 dark:text-white">
+                 <div className="w-full lg:w-1/2 p-6 md:p-10 lg:p-16 overflow-y-auto">
+                    <button onClick={() => { setSelectedId(null); playClick(); }} className="absolute top-4 right-4 lg:top-6 lg:right-6 p-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-full transition-colors text-slate-900 dark:text-white z-50">
                       <X size={20} />
                     </button>
                     
                     <span className="text-cyan-600 dark:text-cyan-400 font-mono text-xs tracking-[0.5em] uppercase">{selectedProject.badge}</span>
-                    <h2 className="text-4xl lg:text-5xl font-bold mt-4 mb-6 text-slate-900 dark:text-white font-display">{selectedProject.headline}</h2>
-                    <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed mb-10 font-sans">{selectedProject.longDescription}</p>
+                    <h2 className="text-3xl lg:text-5xl font-bold mt-4 mb-6 text-slate-900 dark:text-white font-display">{selectedProject.headline}</h2>
+                    <p className="text-slate-600 dark:text-slate-300 text-base lg:text-lg leading-relaxed mb-10 font-sans">{selectedProject.longDescription}</p>
                     
                     <div className="flex flex-wrap gap-3 mb-12">
                       {['Cloud Arch', 'Neural Logic', 'Zero Trust'].map(t => (

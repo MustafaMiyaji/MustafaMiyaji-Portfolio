@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const SYMBOLS = "λ Ω Δ Σ Φ Ψ 0 1 Ξ Π Γ";
 
@@ -41,9 +41,11 @@ const Preloader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       transition={{ duration: 0.8, ease: "easeInOut" }}
     >
       {/* Background Matrix-style symbols */}
-      <div className="absolute inset-0 opacity-[0.03] text-[8px] flex flex-wrap gap-2 p-4 pointer-events-none select-none overflow-hidden">
-         {Array.from({ length: 500 }).map((_, i) => (
-           <span key={i}>{SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]}</span>
+      <div className="absolute inset-0 opacity-[0.05] text-[10px] flex flex-wrap gap-2 p-4 pointer-events-none select-none overflow-hidden content-start">
+         {Array.from({ length: 800 }).map((_, i) => (
+           <span key={i} className="animate-pulse" style={{ animationDelay: `${Math.random() * 2}s` }}>
+              {SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]}
+           </span>
          ))}
       </div>
 
@@ -64,7 +66,7 @@ const Preloader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         </div>
 
         <div className="mt-8 flex flex-col items-center gap-2">
-          <div className="text-[10px] text-cyan-500 tracking-[1em] uppercase">Establishing Neural Link</div>
+          <div className="text-[10px] text-cyan-500 tracking-[1em] uppercase">MIYAJI Neural Link</div>
           <div className="text-[8px] text-slate-600 font-mono h-4">{glitchText}</div>
         </div>
       </div>

@@ -1,25 +1,28 @@
 
 import React, { useEffect, useRef } from 'react';
+import { useTheme } from './ThemeContext';
+import { MotionValue } from 'framer-motion';
 
-const Background: React.FC = () => {
+interface BackgroundProps {
+    scrollVelocity: MotionValue<number>;
+}
+
+const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: false }); // Optimize for no transparency on base
+    const ctx = canvas.getContext('2d', { alpha: false }); 
     if (!ctx) return;
 
     let animationFrameId: number;
     let width = window.innerWidth;
     let height = window.innerHeight;
     
-    // Check system theme dynamically
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    let isDark = mediaQuery.matches;
-
     // Mouse state
-    const mouse = { x: -500, y: -500, active: false };
+    const mouse = { x: -1000, y: -1000, active: false };
 
     // --- SYSTEMS CONFIG ---
     // Dark Mode: "The Neural Grid"
@@ -32,11 +35,13 @@ const Background: React.FC = () => {
       baseSize: number;
       pulse: number;
       pulseSpeed: number;
+      threatLevel: number;
     }
     const particles: Particle[] = [];
-    const PARTICLE_COUNT = 150; // Increased density
+    const PARTICLE_COUNT = 150; 
     const CONNECTION_DIST = 160;
-    const MOUSE_REPULSION_DIST = 200; // Radius where particles avoid cursor
+    const MOUSE_REPULSION_DIST = 250;
+    const PANIC_DIST = 150;
 
     // Light Mode: "Fluid Aether"
     interface Orb {
@@ -54,10 +59,10 @@ const Background: React.FC = () => {
     }
     const orbs: Orb[] = [];
     const orbColors = [
-        'rgba(6, 182, 212, 0.15)',  // Soft Cyan
-        'rgba(139, 92, 246, 0.15)', // Soft Purple
-        'rgba(59, 130, 246, 0.15)', // Soft Blue
-        'rgba(236, 72, 153, 0.1)'   // Soft Pink
+        'rgba(6, 182, 212, 0.15)',  
+        'rgba(139, 92, 246, 0.15)', 
+        'rgba(59, 130, 246, 0.15)', 
+        'rgba(236, 72, 153, 0.1)'   
     ];
 
     const init = () => {
@@ -78,7 +83,8 @@ const Background: React.FC = () => {
           size: size,
           baseSize: size,
           pulse: Math.random() * Math.PI,
-          pulseSpeed: 0.02 + Math.random() * 0.03
+          pulseSpeed: 0.02 + Math.random() * 0.03,
+          threatLevel: 0
         });
       }
 
@@ -103,161 +109,170 @@ const Background: React.FC = () => {
     };
 
     const drawNeuralGrid = () => {
-        // Deep Space Background with slight pulse
         const gradient = ctx.createLinearGradient(0, 0, 0, height);
-        gradient.addColorStop(0, '#030014'); // Deep Space Black
-        gradient.addColorStop(1, '#0f172a'); // Slate 900
+        gradient.addColorStop(0, '#030014');
+        gradient.addColorStop(1, '#0f172a'); 
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, width, height);
+        
+        // Read velocity directly from MotionValue inside the loop
+        const currentVelocity = scrollVelocity.get();
+        const warpFactor = Math.min(Math.abs(currentVelocity) / 50, 10); 
+        const isWarping = warpFactor > 0.5;
 
         particles.forEach((p, i) => {
-            // Physics
+            const warpY = -(currentVelocity / 50); 
+            
             p.x += p.vx;
-            p.y += p.vy;
+            p.y += p.vy + warpY;
             p.pulse += p.pulseSpeed;
 
-            // Breathing effect on size independent of mouse
             p.size = p.baseSize + Math.sin(p.pulse) * 0.5;
 
-            // Boundary Wrap
             if (p.x < 0) p.x = width;
             if (p.x > width) p.x = 0;
             if (p.y < 0) p.y = height;
             if (p.y > height) p.y = 0;
 
-            // REPULSION Logic (Avoid Cursor)
-            let color = 'rgba(6, 182, 212,'; // Default Cyan base
+            let r = 6; let g = 182; let b = 212;
             
+            if (p.threatLevel > 0) p.threatLevel -= 0.05;
+            if (p.threatLevel < 0) p.threatLevel = 0;
+
             if (mouse.active) {
                 const dx = p.x - mouse.x;
                 const dy = p.y - mouse.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                // Color Shift based on proximity (Cyan -> Purple)
-                if (dist < 400) {
-                     // Interpolate color roughly
-                     color = `rgba(139, 92, 246,`; // Switch to purple base near mouse
-                }
-
                 if (dist < MOUSE_REPULSION_DIST) {
                     const force = (MOUSE_REPULSION_DIST - dist) / MOUSE_REPULSION_DIST;
-                    
-                    // Push away actively
-                    p.vx += (dx / dist) * force * 1.5; 
-                    p.vy += (dy / dist) * force * 1.5;
-                    
-                    // Particles shrink slightly when avoiding (compression)
-                    p.size = Math.max(0.5, p.baseSize - force);
+                    p.vx += (dx / dist) * force * 2.0; 
+                    p.vy += (dy / dist) * force * 2.0;
+                    if (dist < PANIC_DIST) p.threatLevel = 1;
                 }
             }
             
-            // Friction/Limit speed
-            p.vx *= 0.95;
-            p.vy *= 0.95;
+            r = r + (255 - r) * p.threatLevel;
+            g = g + (50 - g) * p.threatLevel;
+            b = b + (50 - b) * p.threatLevel;
+
+            p.vx *= 0.94;
+            p.vy *= 0.94;
             
-            // Minimum movement to keep it alive
-            if (Math.abs(p.vx) < 0.2) p.vx += (Math.random() - 0.5) * 0.05;
-            if (Math.abs(p.vy) < 0.2) p.vy += (Math.random() - 0.5) * 0.05;
+            const alpha = 0.3 + Math.sin(p.pulse) * 0.5;
+            const colorString = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}`;
 
-            // Draw Nodes - Pulse effect
-            const alpha = 0.3 + Math.sin(p.pulse) * 0.5; // More intense pulse
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fillStyle = `${color} ${alpha})`;
-            ctx.fill();
+            if (isWarping) {
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x, p.y - (warpY * 3));
+                ctx.strokeStyle = `${colorString}, ${alpha})`;
+                ctx.lineWidth = p.size;
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = `${colorString}, ${alpha})`;
+                ctx.fill();
+            }
 
-            // Draw Connections
-            for (let j = i + 1; j < particles.length; j++) {
-                const p2 = particles[j];
-                const dx = p.x - p2.x;
-                const dy = p.y - p2.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
+            if (!isWarping) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
 
-                if (dist < CONNECTION_DIST) {
-                    const opacity = (1 - dist / CONNECTION_DIST) * 0.15;
-                    ctx.beginPath();
-                    ctx.strokeStyle = `${color} ${opacity})`;
-                    ctx.lineWidth = 0.5;
-                    ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.stroke();
+                    if (dist < CONNECTION_DIST) {
+                        const opacity = (1 - dist / CONNECTION_DIST) * 0.15;
+                        ctx.beginPath();
+                        const isThreat = Math.max(p.threatLevel, p2.threatLevel);
+                        const lr = 6 + (255 - 6) * isThreat;
+                        const lg = 182 + (50 - 182) * isThreat;
+                        const lb = 212 + (50 - 212) * isThreat;
+
+                        ctx.strokeStyle = `rgba(${Math.floor(lr)}, ${Math.floor(lg)}, ${Math.floor(lb)}, ${opacity})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
                 }
             }
         });
     };
 
     const drawFluidAether = () => {
-        // Ceramic Background
         ctx.fillStyle = '#F8FAFC';
         ctx.fillRect(0, 0, width, height);
 
+        const currentVelocity = scrollVelocity.get();
+
         orbs.forEach(orb => {
-            // Complex Fluid Movement: Velocity + Sine Wave Oscillation
             orb.angle += orb.angleSpeed;
-            
-            // Base movement
             let dx = Math.cos(orb.angle) * 0.5 + orb.vx;
             let dy = Math.sin(orb.angle) * 0.5 + orb.vy;
             
-            // Add organic oscillation
-            dx += Math.cos(Date.now() * 0.001 * orb.oscillationSpeed) * 0.2;
-            dy += Math.sin(Date.now() * 0.001 * orb.oscillationSpeed) * 0.2;
+            const warpY = -(currentVelocity / 100); 
+            orb.y += warpY;
 
             orb.x += dx;
             orb.y += dy;
 
-            // Morphing size (pulsing blobs)
-            const breathing = Math.sin(Date.now() * 0.002 + orb.x * 0.01) * 15;
-            const currentRadius = orb.radius + breathing;
-
-            // Wall Bounce
-            if (orb.x < -currentRadius) orb.vx += 0.05;
-            if (orb.x > width + currentRadius) orb.vx -= 0.05;
-            if (orb.y < -currentRadius) orb.vy += 0.05;
-            if (orb.y > height + currentRadius) orb.vy -= 0.05;
-
-            // Intense Mouse Repulsion (Ripple effect)
+            // Intense Mouse Interaction
             if (mouse.active) {
                 const dx = orb.x - mouse.x;
                 const dy = orb.y - mouse.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 
-                if (dist < 600) {
-                    const force = (600 - dist) / 600;
-                    // Push away logic
-                    orb.vx += (dx / dist) * force * 0.8;
-                    orb.vy += (dy / dist) * force * 0.8;
+                // Increased interaction radius for "ripple" feel
+                const INTERACTION_RADIUS = 500;
+                
+                if (dist < INTERACTION_RADIUS) {
+                    const force = Math.pow((INTERACTION_RADIUS - dist) / INTERACTION_RADIUS, 2); // Exponential force
+                    const angle = Math.atan2(dy, dx);
                     
-                    // Ripple size distortion - squish effect
-                    orb.radius = orb.baseRadius - (Math.sin(dist * 0.1) * 20 * force);
+                    // Violent push
+                    orb.vx += Math.cos(angle) * force * 3.0;
+                    orb.vy += Math.sin(angle) * force * 3.0;
+                    
+                    // Ripple distortion effect on radius
+                    const velocityMag = Math.sqrt(orb.vx * orb.vx + orb.vy * orb.vy);
+                    orb.radius = orb.baseRadius + (velocityMag * 5) + (Math.sin(dist * 0.1) * 20);
                 } else {
-                    // Restore size with damped spring
+                    // Elastic return
                     orb.radius += (orb.baseRadius - orb.radius) * 0.05;
                 }
+            } else {
+                 orb.radius += (orb.baseRadius - orb.radius) * 0.05;
             }
-            
-            // Friction
+
+            // Boundary wrapping
+            if (orb.x < -orb.radius) orb.x = width + orb.radius;
+            if (orb.x > width + orb.radius) orb.x = -orb.radius;
+            if (orb.y < -orb.radius) orb.y = height + orb.radius;
+            if (orb.y > height + orb.radius) orb.y = -orb.radius;
+
+            // Damping
             orb.vx *= 0.96;
             orb.vy *= 0.96;
 
-            // Draw Soft Orbs
-            const gradient = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, Math.max(0, currentRadius));
+            const gradient = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, Math.max(0, orb.radius));
             gradient.addColorStop(0, orb.color);
             gradient.addColorStop(1, 'rgba(255,255,255,0)');
             
             ctx.fillStyle = gradient;
             ctx.beginPath();
-            ctx.arc(orb.x, orb.y, Math.max(0, currentRadius), 0, Math.PI * 2);
+            ctx.arc(orb.x, orb.y, Math.max(0, orb.radius), 0, Math.PI * 2);
             ctx.fill();
         });
-
-        // Matte Overlay for "Ceramic" feel
+        
         ctx.fillStyle = 'rgba(248, 250, 252, 0.3)';
         ctx.fillRect(0, 0, width, height);
     };
 
     const render = () => {
-        if (isDark) {
+        if (theme === 'dark') {
             drawNeuralGrid();
         } else {
             drawFluidAether();
@@ -275,14 +290,8 @@ const Background: React.FC = () => {
         init();
     };
 
-    const handleThemeChange = (e: MediaQueryListEvent) => {
-        isDark = e.matches;
-        init();
-    };
-
     window.addEventListener('resize', handleResize);
     window.addEventListener('mousemove', handleMouseMove);
-    mediaQuery.addEventListener('change', handleThemeChange);
     
     init();
     render();
@@ -290,10 +299,9 @@ const Background: React.FC = () => {
     return () => {
         window.removeEventListener('resize', handleResize);
         window.removeEventListener('mousemove', handleMouseMove);
-        mediaQuery.removeEventListener('change', handleThemeChange);
         cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [theme, scrollVelocity]); 
 
   return (
     <canvas 

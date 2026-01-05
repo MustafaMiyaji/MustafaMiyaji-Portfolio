@@ -1,25 +1,28 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { Terminal, Bot, User, Cpu, ShieldCheck } from 'lucide-react';
+import { Terminal, Bot, User, Cpu, Download } from 'lucide-react';
+import { useSound } from './SoundManager';
+
+const RESUME_LINK = "https://drive.google.com/file/d/1hdW7tMXtyiVWKSYdjIoUg0fS_d2Jv7Ri/view?usp=sharing";
 
 const messagesData = [
   { 
     id: 1, 
     user: 'AI', 
-    text: "Neural verification successful. Initializing Alimiyaji_Archive...", 
+    text: "Neural verification successful. Initializing Miyaji_Archive...", 
     icon: <Bot size={16} /> 
   },
   { 
     id: 2, 
     user: 'Mustafa', 
-    text: "Lead Cloud Architect at UptoSkills. Specialized in automated container orchestration (K8s) and high-availability clusters.", 
+    text: "Lead Cloud Architect & Backend Developer. Specialized in automated container orchestration (K8s) and scalable API architectures.", 
     icon: <User size={16} /> 
   },
   { 
     id: 3, 
     user: 'System', 
-    text: "METRIC: 99.99% Infrastructure Uptime achieved across 14+ enterprise nodes. Secured via Hardened CI/CD pipelines.", 
+    text: "METRIC: 99.99% Infrastructure Uptime achieved across enterprise nodes. Secured via Hardened CI/CD pipelines.", 
     isSystem: true 
   },
   { 
@@ -59,23 +62,23 @@ const AboutChat: React.FC = () => {
   const [visibleMessages, setVisibleMessages] = useState<typeof messagesData>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const { playSuccess } = useSound();
 
-  // Intersection Observer simulation (triggers when component mounts/in view)
   const onInView = () => {
     if (hasStarted) return;
     setHasStarted(true);
     let delay = 0;
     
     messagesData.forEach((msg, index) => {
-      delay += 800; // Time to "read" previous message
+      delay += 800; 
       
-      // Simulate typing before AI/System messages
       if (msg.user === 'AI' || msg.isSystem) {
          setTimeout(() => setIsTyping(true), delay);
-         delay += 1200; // Typing duration
+         delay += 1200; 
          setTimeout(() => {
            setIsTyping(false);
            setVisibleMessages(prev => [...prev, msg]);
+           if (index === messagesData.length - 1) playSuccess();
          }, delay);
       } else {
          setTimeout(() => {
@@ -94,10 +97,8 @@ const AboutChat: React.FC = () => {
         viewport={{ once: true, amount: 0.3 }}
         className="bg-white/80 dark:bg-black/40 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden min-h-[600px]"
       >
-        {/* Animated Background Pulse */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent animate-shimmer" />
         
-        {/* Terminal Header */}
         <div className="flex items-center justify-between mb-12 pb-6 border-b border-slate-200 dark:border-white/5">
           <div className="flex items-center gap-4">
             <div className="flex gap-2">
@@ -109,12 +110,18 @@ const AboutChat: React.FC = () => {
               <Terminal size={12} /> protocol_identity.sh
             </span>
           </div>
-          <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 dark:text-white/20">
-            <ShieldCheck size={12} /> ENCRYPTED_STREAM
-          </div>
+          
+          <a 
+            href={RESUME_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-cursor="magnetic"
+            className="flex items-center gap-2 text-[10px] font-mono text-slate-500 hover:text-cyan-500 transition-colors border border-slate-700 rounded px-2 py-1 group"
+          >
+             <Download size={10} className="group-hover:animate-bounce" /> DOWNLOAD_RESUME
+          </a>
         </div>
 
-        {/* Chat Stream */}
         <div className="space-y-10">
           {visibleMessages.map((msg) => (
             <motion.div
@@ -160,7 +167,6 @@ const AboutChat: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Interactive Stats Footnote */}
         <div className="mt-16 pt-8 border-t border-slate-200 dark:border-white/5 grid grid-cols-2 md:grid-cols-4 gap-8">
            {[
              { label: "Uptime", val: "99.9%" },

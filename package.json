@@ -2,7 +2,7 @@
 {
   "name": "neural-grid-portfolio",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "A surreal, cinematic developer portfolio featuring glassmorphism, fluid physics simulations, and cyber-intelligence aesthetics.",
   "keywords": [
@@ -14,7 +14,7 @@
     "ui-ux",
     "frontend"
   ],
-  "author": "Mustafa Alimiyaji",
+  "author": "Mustafa Miyaji",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

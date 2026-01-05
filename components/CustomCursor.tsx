@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { motion, useSpring, useMotionValue, transform } from 'framer-motion';
+import { motion, useSpring, useMotionValue } from 'framer-motion';
 
 const CustomCursor: React.FC = () => {
   const [isHovering, setIsHovering] = useState(false);
@@ -10,10 +10,10 @@ const CustomCursor: React.FC = () => {
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
 
-  // When magnetic, stiffen the spring to feel like it's "stuck" but elastic
-  const springConfig = isHovering && magnetRect
-    ? { stiffness: 150, damping: 15, mass: 0.1 } 
-    : { stiffness: 500, damping: 28 };
+  // Adjusted physics for a "heavier" pull
+  const springConfig = isHovering 
+    ? { stiffness: 150, damping: 15, mass: 0.5 } // Magnetic: bouncier, snap
+    : { stiffness: 1000, damping: 50, mass: 0.1 }; // Normal: Sharp follow
 
   const smoothX = useSpring(cursorX, springConfig);
   const smoothY = useSpring(cursorY, springConfig);
@@ -21,7 +21,7 @@ const CustomCursor: React.FC = () => {
   useEffect(() => {
     const mouseMove = (e: MouseEvent) => {
       if (isHovering && magnetRect) {
-        // Magnetic Logic: Pull towards center of element
+        // Magnetic Logic: Pull towards center of element with a lag
         const centerX = magnetRect.left + magnetRect.width / 2;
         const centerY = magnetRect.top + magnetRect.height / 2;
         
@@ -29,10 +29,10 @@ const CustomCursor: React.FC = () => {
         const dx = e.clientX - centerX;
         const dy = e.clientY - centerY;
         
-        // Apply magnetic pull: Cursor position is Center + reduced delta
-        // The factor 0.3 means the cursor moves 30% of the distance the mouse moves, staying close to center
-        const magneticX = centerX + dx * 0.2;
-        const magneticY = centerY + dy * 0.2;
+        // Apply magnetic pull: 
+        // We move the cursor towards the mouse, but clamped heavily towards the center of the element
+        const magneticX = centerX + dx * 0.3; // Stronger pull to center (0.3 factor)
+        const magneticY = centerY + dy * 0.3;
 
         cursorX.set(magneticX);
         cursorY.set(magneticY);
@@ -56,7 +56,6 @@ const CustomCursor: React.FC = () => {
             setIsHovering(true);
             setMagnetRect(magneticElement.getBoundingClientRect());
         } else if (window.getComputedStyle(target).cursor === 'pointer') {
-            // For general pointer elements, we enable hover state but use the target's rect
             setIsHovering(true);
             setMagnetRect(target.getBoundingClientRect());
         } else {
@@ -96,11 +95,11 @@ const CustomCursor: React.FC = () => {
           translateY: "-50%"
         }}
         animate={{
-            scale: isHovering ? 0.5 : 1
+            scale: isHovering ? 0.3 : 1
         }}
       />
       
-      {/* Magnetic Outer Ring */}
+      {/* Magnetic Outer Ring - The "Lazy" Follower */}
       <motion.div
         className="fixed top-0 left-0 w-10 h-10 border border-black dark:border-white rounded-full pointer-events-none z-[9998] opacity-50"
         style={{
@@ -110,13 +109,13 @@ const CustomCursor: React.FC = () => {
             translateY: "-50%"
         }}
         animate={{
-          width: isHovering ? 60 : 40,
-          height: isHovering ? 60 : 40,
-          borderColor: isHovering ? 'rgba(6,182,212, 0.8)' : 'currentColor',
-          borderWidth: isHovering ? '2px' : '1px',
+          width: isHovering ? 80 : 40,
+          height: isHovering ? 80 : 40,
+          borderColor: isHovering ? 'rgba(6,182,212, 0.6)' : 'currentColor',
+          borderWidth: isHovering ? '1px' : '1px',
           backgroundColor: isHovering ? 'rgba(6,182,212, 0.05)' : 'transparent'
         }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        transition={{ type: "spring", stiffness: 200, damping: 20 }}
       />
     </>
   );
