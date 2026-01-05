@@ -1,0 +1,262 @@
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { X, ArrowUpRight, Code2 } from 'lucide-react';
+import { Project } from '../types';
+
+const projects: Project[] = [
+  {
+    id: 'careerstealth',
+    badge: 'AI AGENT',
+    headline: 'CareerStealth',
+    description: 'Neural HR agent simulating varied industry personas for ATS grading.',
+    visualGradient: 'from-orange-500/10 to-red-600/20',
+    link: 'https://careerstealth.app/',
+    longDescription: "A sophisticated AI agent powered by Gemini that simulates various HR personas (The Grumpy Recruiter, The Tech Lead, The Startup Founder) to analyze resumes. It parses PDFs, evaluates keywords against ATS standards, and provides specific, actionable feedback with a touch of humor.",
+    image: "https://images.unsplash.com/photo-1767612600750-e8b5a43be3b3?q=80&w=1777&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+  },
+  {
+    id: 'perfectreply',
+    badge: 'SAAS',
+    headline: "PerfectReply",
+    description: "Multimodal sentiment analysis engine for conversational optimization.",
+    visualGradient: 'from-purple-500/10 to-pink-600/20',
+    link: 'https://perfectreply.tech',
+    longDescription: "An empathy-driven engine that analyzes screenshots of conversations and audio snippets to determine the 'vibe'. It suggests replies that aren't just grammatically correct but emotionally calibrated to the specific relationship dynamic.",
+    image: "https://images.unsplash.com/photo-1767612600629-fce3bb48b50e?q=80&w=1778&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  },
+  {
+    id: 'blockchain-logs',
+    badge: 'WEB3 DEVOPS',
+    headline: 'ChainLog',
+    description: 'Decentralized immutable audit trail for CI/CD pipelines.',
+    visualGradient: 'from-blue-500/10 to-slate-600/20',
+    link: 'https://github.com/MustafaMiyaji',
+    longDescription: "Developed a decentralized logging system to record immutable deployment audit trails for DevOps pipelines. Integrated Blockchain technology to ensure transparency and prevent tampering of CI/CD build logs.",
+    image: "https://images.unsplash.com/photo-1767612600650-fefb103d537d?q=80&w=2079&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  },
+  {
+    id: 'aws-vpc',
+    badge: 'AWS INFRA',
+    headline: 'AWS VPC Deployment',
+    description: 'Secure network architecture with public/private subnets, NAT, and bastion access.',
+    visualGradient: 'from-yellow-500/10 to-orange-600/20',
+    link: 'https://github.com/MustafaMiyaji',
+    longDescription: "This project provides a detailed implementation of an AWS Virtual Private Cloud (VPC) with a secure network architecture. The deployment process includes configuring public and private subnets, setting up a NAT gateway, and deploying a bastion server for secure SSH access to internal resources.",
+    image: "https://images.unsplash.com/photo-1767612600648-34c9b1fe6bda?q=80&w=2110&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  }
+];
+
+const TechBadge: React.FC<{ label: string; index: number }> = ({ label, index }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    whileHover={{ scale: 1.1 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: index * 0.1 }}
+    className="px-2 py-1 bg-white/20 dark:bg-black/50 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-md text-[10px] font-mono text-white font-semibold"
+  >
+    {label}
+  </motion.div>
+);
+
+const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ project, onClick }) => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const rotateX = useSpring(useTransform(y, [-100, 100], [5, -5]), { stiffness: 400, damping: 30 });
+  const rotateY = useSpring(useTransform(x, [-100, 100], [-5, 5]), { stiffness: 400, damping: 30 });
+
+  function handleMouse(e: React.MouseEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    x.set(e.clientX - (rect.left + rect.width / 2));
+    y.set(e.clientY - (rect.top + rect.height / 2));
+  }
+
+  // Dynamic Text Shadow: Moves in opposition to the light source to simulate lift
+  const textShadowX = useTransform(x, [-200, 200], [8, -8]);
+  const textShadowY = useTransform(y, [-200, 200], [8, -8]);
+  
+  const techStack = ['React', 'TypeScript', 'Node.js', 'AWS']; 
+
+  return (
+    <motion.div
+      style={{ rotateX, rotateY, perspective: 1000 }}
+      onMouseMove={handleMouse}
+      onMouseLeave={() => { x.set(0); y.set(0); setIsHovered(false); }}
+      onMouseEnter={() => setIsHovered(true)}
+      onClick={onClick}
+      // Add data-cursor attribute for magnetic effect
+      data-cursor="magnetic" 
+      className="group relative h-[450px] rounded-[2rem] overflow-hidden cursor-none border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-cyber-dark transform-style-3d shadow-xl hover:shadow-2xl transition-all duration-500 hover:border-cyan-500/50"
+    >
+      <div className="absolute inset-0 z-0 bg-slate-900 overflow-hidden">
+        <img 
+            src={project.image} 
+            alt={project.headline} 
+            className="w-full h-full object-cover transition-all duration-700 opacity-80 group-hover:opacity-40 group-hover:scale-110 group-hover:brightness-50" 
+        />
+      </div>
+
+      {/* Dark overlay for contrast */}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent z-10" />
+
+      {/* Dynamic Glare Effect - Pulsing when idle */}
+      <motion.div 
+        className="absolute inset-0 z-20 pointer-events-none mix-blend-overlay"
+        animate={{
+            opacity: isHovered ? [0.2, 0.4, 0.2] : [0, 0.1, 0], // Pulse when idle
+            backgroundPosition: isHovered ? ["0% 0%", "100% 100%"] : ["0% 0%", "50% 50%"]
+        }}
+        transition={{
+            opacity: { duration: isHovered ? 2 : 4, repeat: Infinity, ease: "easeInOut" },
+            backgroundPosition: { duration: 8, repeat: Infinity, ease: "linear" }
+        }}
+        style={{
+            background: isHovered 
+                ? "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%)"
+                : "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%)",
+            x: useTransform(x, [-100, 100], [-50, 50]),
+            y: useTransform(y, [-100, 100], [-50, 50]),
+        }}
+      />
+      
+      {/* Spotlight for Hover State */}
+      <motion.div
+        className="absolute inset-0 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{
+            background: useTransform(
+                [x, y],
+                ([latestX, latestY]: any[]) => `radial-gradient(400px circle at ${latestX + 200}px ${latestY + 225}px, rgba(255,255,255,0.15), transparent 80%)`
+            )
+        }}
+      />
+
+      {/* Floating Tech Stack on Top Right */}
+      <div className="absolute top-6 right-6 z-30 flex flex-col gap-2 items-end">
+          <AnimatePresence>
+            {isHovered && techStack.map((tech, i) => (
+               <TechBadge key={tech} label={tech} index={i} />
+            ))}
+          </AnimatePresence>
+      </div>
+
+      <div className="absolute bottom-0 left-0 w-full p-8 z-20">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+             <div className="w-6 h-[1px] bg-cyan-500" />
+             <span className="text-[10px] font-mono text-cyan-400 tracking-[0.2em] uppercase shadow-black drop-shadow-md">{project.badge}</span>
+          </div>
+          
+          {/* Headline with Lifting Text Shadow */}
+          <motion.h3 
+            className="text-3xl font-bold text-white font-display tracking-tight drop-shadow-lg transform transition-transform duration-300 group-hover:-translate-y-2"
+            style={{ 
+               textShadow: useTransform(
+                 [textShadowX, textShadowY],
+                 ([sX, sY]: any) => isHovered ? `${sX}px ${sY}px 20px rgba(0,0,0,0.8)` : '0px 0px 0px rgba(0,0,0,0)'
+               )
+            }}
+          >
+            {project.headline}
+          </motion.h3>
+          
+          <div className="overflow-hidden">
+            <motion.p 
+                className="text-sm text-slate-300 line-clamp-2 max-w-sm transform translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 delay-75 ease-out"
+                style={{ 
+                   textShadow: useTransform(
+                     [textShadowX, textShadowY],
+                     ([sX, sY]: any) => isHovered ? `${sX/2}px ${sY/2}px 10px rgba(0,0,0,0.8)` : '0px 0px 0px rgba(0,0,0,0)'
+                   )
+                }}
+            >
+                {project.description}
+            </motion.p>
+          </div>
+
+          <div className="mt-4 flex items-center gap-4 overflow-hidden">
+             <div className="px-5 py-2 bg-white/20 backdrop-blur-md rounded-full border border-white/20 text-[10px] font-mono text-white transform translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 delay-150 flex items-center gap-2">
+                <Code2 size={12} /> INITIALIZE_PROJECT
+             </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const ProjectGrid: React.FC = () => {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedProject = projects.find(p => p.id === selectedId);
+
+  return (
+    <section id="projects" className="py-32 px-4 w-full relative z-10">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-20 flex flex-col items-center text-center">
+           <motion.div 
+             initial={{ opacity: 0, y: 20 }}
+             whileInView={{ opacity: 1, y: 0 }}
+             className="text-[10px] font-mono text-cyan-700 dark:text-cyan-400 tracking-[1em] uppercase mb-4"
+           >
+             Portfolio_Index
+           </motion.div>
+           <h2 className="text-5xl md:text-7xl font-bold text-cyber-text dark:text-white font-display uppercase tracking-tight">
+             Selected Works
+           </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {projects.map(p => (
+            <ProjectCard key={p.id} project={p} onClick={() => setSelectedId(p.id)} />
+          ))}
+        </div>
+
+        <AnimatePresence>
+          {selectedId && selectedProject && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 lg:p-12">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedId(null)}
+                className="absolute inset-0 bg-slate-900/90 dark:bg-black/90 backdrop-blur-xl"
+              />
+              <motion.div 
+                layoutId={`card-${selectedId}`}
+                className="relative w-full max-w-6xl bg-white dark:bg-[#0a0a0a] rounded-[2.5rem] overflow-hidden border border-slate-200 dark:border-white/10 shadow-2xl flex flex-col lg:flex-row h-full max-h-[85vh]"
+              >
+                 <div className="w-full lg:w-1/2 h-[300px] lg:h-full relative overflow-hidden bg-slate-800">
+                    <img src={selectedProject.image} className="w-full h-full object-cover" alt="" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                 </div>
+                 
+                 <div className="w-full lg:w-1/2 p-8 lg:p-16 overflow-y-auto">
+                    <button onClick={() => setSelectedId(null)} className="absolute top-6 right-6 p-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-full transition-colors text-slate-900 dark:text-white">
+                      <X size={20} />
+                    </button>
+                    
+                    <span className="text-cyan-600 dark:text-cyan-400 font-mono text-xs tracking-[0.5em] uppercase">{selectedProject.badge}</span>
+                    <h2 className="text-4xl lg:text-5xl font-bold mt-4 mb-6 text-slate-900 dark:text-white font-display">{selectedProject.headline}</h2>
+                    <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed mb-10 font-sans">{selectedProject.longDescription}</p>
+                    
+                    <div className="flex flex-wrap gap-3 mb-12">
+                      {['Cloud Arch', 'Neural Logic', 'Zero Trust'].map(t => (
+                        <span key={t} className="px-4 py-1.5 bg-slate-100 dark:bg-white/5 rounded-full text-[10px] font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 uppercase tracking-widest">{t}</span>
+                      ))}
+                    </div>
+
+                    <a href={selectedProject.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-4 px-8 py-4 bg-cyan-600 dark:bg-cyan-500 text-white dark:text-black font-bold rounded-xl hover:bg-cyan-700 dark:hover:bg-cyan-400 transition-all shadow-lg hover:shadow-cyan-500/25">
+                      INITIALIZE_OPS <ArrowUpRight size={18} />
+                    </a>
+                 </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </section>
+  );
+};
+
+export default ProjectGrid;

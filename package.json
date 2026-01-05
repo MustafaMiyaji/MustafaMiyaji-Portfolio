@@ -1,0 +1,39 @@
+
+{
+  "name": "neural-grid-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A surreal, cinematic developer portfolio featuring glassmorphism, fluid physics simulations, and cyber-intelligence aesthetics.",
+  "keywords": [
+    "react",
+    "portfolio",
+    "framer-motion",
+    "threejs",
+    "cyberpunk",
+    "ui-ux",
+    "frontend"
+  ],
+  "author": "Mustafa Alimiyaji",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "framer-motion": "*",
+    "lucide-react": "*",
+    "react": "*",
+    "react-dom": "*"
+  },
+  "devDependencies": {
+    "@types/node": "*",
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "@vitejs/plugin-react": "*",
+    "typescript": "*",
+    "vite": "*"
+  }
+}

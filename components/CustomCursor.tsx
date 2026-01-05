@@ -1,0 +1,125 @@
+
+import React, { useEffect, useState } from 'react';
+import { motion, useSpring, useMotionValue, transform } from 'framer-motion';
+
+const CustomCursor: React.FC = () => {
+  const [isHovering, setIsHovering] = useState(false);
+  const [magnetRect, setMagnetRect] = useState<DOMRect | null>(null);
+  
+  // Use springs for smooth magnetic physics
+  const cursorX = useMotionValue(-100);
+  const cursorY = useMotionValue(-100);
+
+  // When magnetic, stiffen the spring to feel like it's "stuck" but elastic
+  const springConfig = isHovering && magnetRect
+    ? { stiffness: 150, damping: 15, mass: 0.1 } 
+    : { stiffness: 500, damping: 28 };
+
+  const smoothX = useSpring(cursorX, springConfig);
+  const smoothY = useSpring(cursorY, springConfig);
+
+  useEffect(() => {
+    const mouseMove = (e: MouseEvent) => {
+      if (isHovering && magnetRect) {
+        // Magnetic Logic: Pull towards center of element
+        const centerX = magnetRect.left + magnetRect.width / 2;
+        const centerY = magnetRect.top + magnetRect.height / 2;
+        
+        // Calculate distance from center (delta)
+        const dx = e.clientX - centerX;
+        const dy = e.clientY - centerY;
+        
+        // Apply magnetic pull: Cursor position is Center + reduced delta
+        // The factor 0.3 means the cursor moves 30% of the distance the mouse moves, staying close to center
+        const magneticX = centerX + dx * 0.2;
+        const magneticY = centerY + dy * 0.2;
+
+        cursorX.set(magneticX);
+        cursorY.set(magneticY);
+      } else {
+        // Standard Follow
+        cursorX.set(e.clientX);
+        cursorY.set(e.clientY);
+      }
+    };
+
+    const handleMouseOver = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        
+        // Check for specific clickable elements that we want to magnetize to
+        const magneticElement = 
+            target.closest('button') || 
+            target.closest('a') || 
+            target.closest('[data-cursor="magnetic"]');
+
+        if (magneticElement) {
+            setIsHovering(true);
+            setMagnetRect(magneticElement.getBoundingClientRect());
+        } else if (window.getComputedStyle(target).cursor === 'pointer') {
+            // For general pointer elements, we enable hover state but use the target's rect
+            setIsHovering(true);
+            setMagnetRect(target.getBoundingClientRect());
+        } else {
+            setIsHovering(false);
+            setMagnetRect(null);
+        }
+    };
+
+    const handleScroll = () => {
+        // Clear magnet on scroll to prevent cursor getting stuck in wrong pos relative to viewport
+        if (isHovering) {
+            setIsHovering(false);
+            setMagnetRect(null);
+        }
+    };
+
+    window.addEventListener('mousemove', mouseMove);
+    window.addEventListener('mouseover', handleMouseOver);
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('mousemove', mouseMove);
+      window.removeEventListener('mouseover', handleMouseOver);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [cursorX, cursorY, isHovering, magnetRect]);
+
+  return (
+    <>
+      {/* Main Dot - Stays sharp */}
+      <motion.div
+        className="fixed top-0 left-0 w-3 h-3 bg-white dark:bg-cyan-400 rounded-full pointer-events-none z-[9999] mix-blend-difference"
+        style={{
+          x: smoothX,
+          y: smoothY,
+          translateX: "-50%",
+          translateY: "-50%"
+        }}
+        animate={{
+            scale: isHovering ? 0.5 : 1
+        }}
+      />
+      
+      {/* Magnetic Outer Ring */}
+      <motion.div
+        className="fixed top-0 left-0 w-10 h-10 border border-black dark:border-white rounded-full pointer-events-none z-[9998] opacity-50"
+        style={{
+            x: smoothX,
+            y: smoothY,
+            translateX: "-50%",
+            translateY: "-50%"
+        }}
+        animate={{
+          width: isHovering ? 60 : 40,
+          height: isHovering ? 60 : 40,
+          borderColor: isHovering ? 'rgba(6,182,212, 0.8)' : 'currentColor',
+          borderWidth: isHovering ? '2px' : '1px',
+          backgroundColor: isHovering ? 'rgba(6,182,212, 0.05)' : 'transparent'
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      />
+    </>
+  );
+};
+
+export default CustomCursor;
