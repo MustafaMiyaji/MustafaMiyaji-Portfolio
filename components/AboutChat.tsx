@@ -89,24 +89,24 @@ const AboutChat: React.FC = () => {
   };
 
   return (
-    <section id="about" className="py-40 px-4 max-w-5xl mx-auto w-full relative z-10">
+    <section id="about" className="py-24 md:py-40 px-4 max-w-5xl mx-auto w-full relative z-10">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
         onViewportEnter={onInView}
         viewport={{ once: true, amount: 0.3 }}
-        className="bg-white/80 dark:bg-black/40 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden min-h-[600px]"
+        className="bg-white/80 dark:bg-black/40 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-6 md:p-12 shadow-2xl relative overflow-hidden min-h-[600px]"
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent animate-shimmer" />
         
-        <div className="flex items-center justify-between mb-12 pb-6 border-b border-slate-200 dark:border-white/5">
+        <div className="flex items-center justify-between mb-8 md:mb-12 pb-6 border-b border-slate-200 dark:border-white/5">
           <div className="flex items-center gap-4">
             <div className="flex gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
               <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
               <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
             </div>
-            <span className="text-[10px] font-mono text-cyan-700 dark:text-cyan-500/50 uppercase tracking-widest flex items-center gap-2">
+            <span className="hidden xs:flex items-center gap-2 text-[10px] font-mono text-cyan-700 dark:text-cyan-500/50 uppercase tracking-widest">
               <Terminal size={12} /> protocol_identity.sh
             </span>
           </div>
@@ -122,7 +122,7 @@ const AboutChat: React.FC = () => {
           </a>
         </div>
 
-        <div className="space-y-10">
+        <div className="space-y-8 md:space-y-10">
           {visibleMessages.map((msg) => (
             <motion.div
               key={msg.id}
@@ -130,10 +130,10 @@ const AboutChat: React.FC = () => {
               variants={messageVariants}
               initial="hidden"
               animate="visible"
-              className={`flex items-start gap-6 ${msg.user === 'Mustafa' ? 'flex-row-reverse' : 'flex-row'}`}
+              className={`flex items-start gap-3 md:gap-6 ${msg.user === 'Mustafa' ? 'flex-row-reverse' : 'flex-row'}`}
             >
               {!msg.isSystem && (
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border shadow-lg
+                <div className={`w-8 h-8 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shrink-0 border shadow-lg
                     ${msg.user === 'Mustafa' 
                       ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30' 
                       : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30'}`}
@@ -142,8 +142,8 @@ const AboutChat: React.FC = () => {
                 </div>
               )}
               
-              <div className={`max-w-[85%] md:max-w-[70%] p-6 rounded-3xl text-sm md:text-base leading-relaxed group transition-all duration-300
-                ${msg.isSystem ? 'w-full text-center bg-transparent border-0 shadow-none text-slate-500 dark:text-slate-500 font-mono text-[10px] my-4 tracking-wider italic' : ''}
+              <div className={`max-w-[85%] md:max-w-[70%] p-4 md:p-6 rounded-3xl text-sm md:text-base leading-relaxed group transition-all duration-300
+                ${msg.isSystem ? 'w-full text-center bg-transparent border-0 shadow-none text-slate-500 dark:text-slate-500 font-mono text-[10px] my-2 md:my-4 tracking-wider italic' : ''}
                 ${!msg.isSystem && msg.user === 'Mustafa' 
                   ? 'bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/20 text-cyan-900 dark:text-cyan-50 rounded-tr-none' 
                   : !msg.isSystem ? 'bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 text-purple-900 dark:text-purple-50 rounded-tl-none' : ''}
@@ -157,8 +157,8 @@ const AboutChat: React.FC = () => {
           
           <AnimatePresence>
             {isTyping && (
-                <div className="flex items-start gap-6">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border shadow-lg bg-purple-500/10 text-purple-400 border-purple-500/30">
+                <div className="flex items-start gap-3 md:gap-6">
+                    <div className="w-8 h-8 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shrink-0 border shadow-lg bg-purple-500/10 text-purple-400 border-purple-500/30">
                         <Bot size={16} />
                     </div>
                     <TypingIndicator />
@@ -167,7 +167,7 @@ const AboutChat: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-slate-200 dark:border-white/5 grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="mt-12 md:mt-16 pt-8 border-t border-slate-200 dark:border-white/5 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
            {[
              { label: "Uptime", val: "99.9%" },
              { label: "Deployment", val: "Automated" },

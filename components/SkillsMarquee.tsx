@@ -25,18 +25,19 @@ const SkillPill: React.FC<{ skill: string }> = ({ skill }) => {
   return (
     <motion.div
       onMouseMove={handleMouseMove}
-      whileHover={{ y: -5, scale: 1.05 }}
+      whileHover={{ y: -8, scale: 1.05 }} // Enhanced Lift
       whileTap={{ scale: 0.95 }}
-      className="relative flex items-center gap-3 px-6 py-3 md:px-8 md:py-4 rounded-full bg-white dark:bg-black/30 backdrop-blur-sm border border-slate-200 dark:border-white/10 overflow-hidden cursor-crosshair group transition-colors hover:border-cyan-500/50"
+      data-cursor="magnetic"
+      className="relative flex items-center gap-3 px-6 py-3 md:px-8 md:py-4 rounded-full bg-white dark:bg-black/30 backdrop-blur-sm border border-slate-200 dark:border-white/10 overflow-hidden cursor-crosshair group transition-all duration-300 hover:border-cyan-400 hover:shadow-[0_10px_20px_rgba(6,182,212,0.15)]"
     >
-      {/* Spotlight Effect */}
+      {/* Spotlight Effect - Brighter and follows cursor */}
       <motion.div
         className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 group-hover:opacity-100"
         style={{
           background: useMotionTemplate`
             radial-gradient(
-              150px circle at ${mouseX}px ${mouseY}px,
-              rgba(6, 182, 212, 0.3),
+              120px circle at ${mouseX}px ${mouseY}px,
+              rgba(6, 182, 212, 0.4),
               transparent 80%
             )
           `,

@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { Award, CheckCircle, Shield, Hexagon, X, ChevronRight } from 'lucide-react';
 
 const certs = [
@@ -118,7 +119,9 @@ const MobileCard: React.FC<{ cert: typeof certs[0]; onClick: () => void }> = ({ 
 
 // --- Expanded Modal ---
 const ExpandedGrid: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-    return (
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(
         <motion.div 
             initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
             animate={{ opacity: 1, backdropFilter: "blur(20px)" }}
@@ -158,6 +161,7 @@ const ExpandedGrid: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
                                 className="group relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-lg hover:shadow-cyan-500/30 hover:border-cyan-400 transition-all duration-300 cursor-pointer"
+                                data-cursor="magnetic"
                             >
                                 <CertContent cert={cert} isGrid />
                             </motion.div>
@@ -165,7 +169,8 @@ const ExpandedGrid: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     </div>
                 </div>
             </motion.div>
-        </motion.div>
+        </motion.div>,
+        document.body
     );
 };
 

@@ -103,7 +103,7 @@ const ContactTerminal: React.FC = () => {
     };
 
     return (
-        <div className="w-full max-w-md h-[250px] bg-black/90 rounded-lg border border-slate-700/50 p-4 font-mono text-sm relative overflow-hidden shadow-2xl flex flex-col">
+        <div className="w-full max-w-full md:max-w-md h-[250px] bg-black/90 rounded-lg border border-slate-700/50 p-4 font-mono text-sm relative overflow-hidden shadow-2xl flex flex-col">
              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10 text-slate-500 text-[10px]">
                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
@@ -113,7 +113,7 @@ const ContactTerminal: React.FC = () => {
              
              <div className="flex-1 overflow-y-auto no-scrollbar space-y-1 mb-2">
                  {history.map((line, i) => (
-                     <div key={i} className={`text-xs ${line.startsWith('guest') ? 'text-slate-400' : 'text-cyan-400'}`}>{line}</div>
+                     <div key={i} className={`text-xs break-all ${line.startsWith('guest') ? 'text-slate-400' : 'text-cyan-400'}`}>{line}</div>
                  ))}
                  <div ref={bottomRef} />
              </div>
@@ -124,7 +124,7 @@ const ContactTerminal: React.FC = () => {
                     type="text" 
                     value={input}
                     onChange={(e) => { setInput(e.target.value); playKeystroke(); }}
-                    className="bg-transparent border-none outline-none text-slate-200 w-full placeholder:text-slate-700 text-xs"
+                    className="bg-transparent border-none outline-none text-slate-200 w-full placeholder:text-slate-700 text-xs min-w-0"
                     autoComplete="off"
                     autoFocus
                     placeholder="Enter command..."

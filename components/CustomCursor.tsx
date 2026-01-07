@@ -12,8 +12,8 @@ const CustomCursor: React.FC = () => {
 
   // Adjusted physics for a "heavier" pull
   const springConfig = isHovering 
-    ? { stiffness: 150, damping: 15, mass: 0.5 } // Magnetic: bouncier, snap
-    : { stiffness: 1000, damping: 50, mass: 0.1 }; // Normal: Sharp follow
+    ? { stiffness: 100, damping: 25, mass: 0.8 } // Magnetic: bouncier, snap, heavy lag
+    : { stiffness: 800, damping: 40, mass: 0.1 }; // Normal: Sharp follow
 
   const smoothX = useSpring(cursorX, springConfig);
   const smoothY = useSpring(cursorY, springConfig);
@@ -31,8 +31,9 @@ const CustomCursor: React.FC = () => {
         
         // Apply magnetic pull: 
         // We move the cursor towards the mouse, but clamped heavily towards the center of the element
-        const magneticX = centerX + dx * 0.3; // Stronger pull to center (0.3 factor)
-        const magneticY = centerY + dy * 0.3;
+        // The factor 0.2 means it moves only 20% of the distance the mouse moves away from center
+        const magneticX = centerX + dx * 0.2; 
+        const magneticY = centerY + dy * 0.2;
 
         cursorX.set(magneticX);
         cursorY.set(magneticY);
@@ -87,7 +88,7 @@ const CustomCursor: React.FC = () => {
     <>
       {/* Main Dot - Stays sharp */}
       <motion.div
-        className="fixed top-0 left-0 w-3 h-3 bg-white dark:bg-cyan-400 rounded-full pointer-events-none z-[9999] mix-blend-difference"
+        className="fixed top-0 left-0 w-3 h-3 bg-white dark:bg-cyan-400 rounded-full pointer-events-none z-[50000] mix-blend-difference"
         style={{
           x: smoothX,
           y: smoothY,
@@ -101,7 +102,7 @@ const CustomCursor: React.FC = () => {
       
       {/* Magnetic Outer Ring - The "Lazy" Follower */}
       <motion.div
-        className="fixed top-0 left-0 w-10 h-10 border border-black dark:border-white rounded-full pointer-events-none z-[9998] opacity-50"
+        className="fixed top-0 left-0 w-10 h-10 border border-black dark:border-white rounded-full pointer-events-none z-[49999] opacity-50"
         style={{
             x: smoothX,
             y: smoothY,

@@ -14,7 +14,7 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: false }); 
+    const ctx = canvas.getContext('2d', { alpha: true }); 
     if (!ctx) return;
 
     let animationFrameId: number;
@@ -25,255 +25,250 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
     const mouse = { x: -1000, y: -1000, active: false };
 
     // --- SYSTEMS CONFIG ---
-    // Dark Mode: "The Neural Grid"
-    interface Particle {
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      size: number;
-      baseSize: number;
-      pulse: number;
-      pulseSpeed: number;
-      threatLevel: number;
+    
+    // Layer 1: Deep Space Stars (Static-ish, twinkling)
+    interface Star {
+        x: number;
+        y: number;
+        size: number;
+        baseAlpha: number;
+        pulseOffset: number;
+        scrollSpeed: number;
     }
-    const particles: Particle[] = [];
-    const PARTICLE_COUNT = 150; 
-    const CONNECTION_DIST = 160;
-    const MOUSE_REPULSION_DIST = 250;
-    const PANIC_DIST = 150;
+    const stars: Star[] = [];
+    const STAR_COUNT = 400; 
 
-    // Light Mode: "Fluid Aether"
+    // Layer 2: Neural Nodes (Interactive, moving)
+    interface Node {
+        x: number;
+        y: number;
+        vx: number;
+        vy: number;
+        radius: number;
+        color: string;
+    }
+    const nodes: Node[] = [];
+    // Increased node count for better coverage
+    const NODE_COUNT = isMobile() ? 40 : 80;
+    const CONNECTION_DIST = 150;
+
+    // Light Mode Orbs
     interface Orb {
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      radius: number;
-      baseRadius: number;
-      color: string;
-      angle: number;
-      angleSpeed: number;
-      oscillationSpeed: number;
-      oscillationAmp: number;
+        x: number;
+        y: number;
+        vx: number;
+        vy: number;
+        radius: number;
+        color: string;
     }
     const orbs: Orb[] = [];
-    const orbColors = [
-        'rgba(6, 182, 212, 0.15)',  
-        'rgba(139, 92, 246, 0.15)', 
-        'rgba(59, 130, 246, 0.15)', 
-        'rgba(236, 72, 153, 0.1)'   
-    ];
+
+    function isMobile() {
+        return width < 768;
+    }
 
     const init = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
 
-      // Init Particles (Dark Mode)
-      particles.length = 0;
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const size = Math.random() * 2 + 0.5;
-        particles.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          size: size,
-          baseSize: size,
-          pulse: Math.random() * Math.PI,
-          pulseSpeed: 0.02 + Math.random() * 0.03,
-          threatLevel: 0
-        });
-      }
+        // Init Stars
+        stars.length = 0;
+        for (let i = 0; i < STAR_COUNT; i++) {
+            stars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 1.5 + 0.5,
+                baseAlpha: Math.random() * 0.5 + 0.2,
+                pulseOffset: Math.random() * Math.PI * 2,
+                scrollSpeed: Math.random() * 0.5 + 0.1 
+            });
+        }
 
-      // Init Orbs (Light Mode)
-      orbs.length = 0;
-      for (let i = 0; i < 7; i++) {
-        const radius = Math.random() * 300 + 200;
-        orbs.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          vx: (Math.random() - 0.5) * 0.8,
-          vy: (Math.random() - 0.5) * 0.8,
-          radius: radius,
-          baseRadius: radius,
-          color: orbColors[i % orbColors.length],
-          angle: Math.random() * Math.PI * 2,
-          angleSpeed: (Math.random() - 0.5) * 0.005,
-          oscillationSpeed: 0.01 + Math.random() * 0.02,
-          oscillationAmp: 20 + Math.random() * 30
-        });
-      }
+        // Init Neural Nodes
+        nodes.length = 0;
+        for (let i = 0; i < NODE_COUNT; i++) {
+            nodes.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                radius: Math.random() * 2 + 1.5,
+                color: Math.random() > 0.5 ? 'cyan' : 'purple'
+            });
+        }
+
+        // Init Orbs (Light Mode)
+        orbs.length = 0;
+        const colors = [
+            'rgba(6, 182, 212, 0.6)', 
+            'rgba(139, 92, 246, 0.6)', 
+            'rgba(236, 72, 153, 0.5)'
+        ];
+        for (let i = 0; i < 6; i++) {
+            orbs.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: (Math.random() - 0.5) * 1.5,
+                radius: Math.random() * 150 + 100,
+                color: colors[i % colors.length]
+            });
+        }
     };
 
-    const drawNeuralGrid = () => {
-        const gradient = ctx.createLinearGradient(0, 0, 0, height);
-        gradient.addColorStop(0, '#030014');
-        gradient.addColorStop(1, '#0f172a'); 
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, height);
+    const drawDeepSpace = (time: number, velocity: number) => {
+        ctx.clearRect(0, 0, width, height);
         
-        // Read velocity directly from MotionValue inside the loop
-        const currentVelocity = scrollVelocity.get();
-        const warpFactor = Math.min(Math.abs(currentVelocity) / 50, 10); 
-        const isWarping = warpFactor > 0.5;
-
-        particles.forEach((p, i) => {
-            const warpY = -(currentVelocity / 50); 
+        ctx.fillStyle = "#FFF";
+        stars.forEach(star => {
+            // Parallax
+            star.y -= velocity * star.scrollSpeed * 0.1;
             
-            p.x += p.vx;
-            p.y += p.vy + warpY;
-            p.pulse += p.pulseSpeed;
+            // Infinite Wrap Y using Modulo
+            // This ensures they wrap seamlessly regardless of speed, preserving distribution
+            star.y = (star.y % height + height) % height;
 
-            p.size = p.baseSize + Math.sin(p.pulse) * 0.5;
-
-            if (p.x < 0) p.x = width;
-            if (p.x > width) p.x = 0;
-            if (p.y < 0) p.y = height;
-            if (p.y > height) p.y = 0;
-
-            let r = 6; let g = 182; let b = 212;
+            // Twinkle
+            const opacity = star.baseAlpha + Math.sin(time * 0.002 + star.pulseOffset) * 0.2;
             
-            if (p.threatLevel > 0) p.threatLevel -= 0.05;
-            if (p.threatLevel < 0) p.threatLevel = 0;
+            ctx.globalAlpha = Math.max(0.1, opacity);
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+    };
 
+    const drawNeuralNetwork = (velocity: number) => {
+        // We use a large buffer and modulo math to ensure the "cloud" wraps
+        // without flattening into lines at the edges.
+        const buffer = 100;
+        const totalHeight = height + buffer * 2;
+
+        nodes.forEach((node, i) => {
+            // Move
+            node.x += node.vx;
+            // Apply velocity parallax to Y
+            node.y += node.vy - (velocity * 0.05); 
+
+            // X Axis: Wall Bounce
+            if (node.x < 0) { node.x = 0; node.vx *= -1; }
+            if (node.x > width) { node.x = width; node.vx *= -1; }
+
+            // Y Axis: Infinite Wrap with Modulo
+            // Shift coordinate space to positive, modulo by total height, shift back
+            node.y = ((node.y + buffer) % totalHeight + totalHeight) % totalHeight - buffer;
+
+            // Mouse Interaction
             if (mouse.active) {
-                const dx = p.x - mouse.x;
-                const dy = p.y - mouse.y;
+                const dx = mouse.x - node.x;
+                const dy = mouse.y - node.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 300) {
+                    // Gentle push
+                    node.x += (dx / dist) * -1; // Repel slightly
+                    node.y += (dy / dist) * -1;
+                }
+            }
+
+            // Draw Connections
+            for (let j = i + 1; j < nodes.length; j++) {
+                const other = nodes[j];
+                const dx = node.x - other.x;
+                const dy = node.y - other.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                if (dist < MOUSE_REPULSION_DIST) {
-                    const force = (MOUSE_REPULSION_DIST - dist) / MOUSE_REPULSION_DIST;
-                    p.vx += (dx / dist) * force * 2.0; 
-                    p.vy += (dy / dist) * force * 2.0;
-                    if (dist < PANIC_DIST) p.threatLevel = 1;
+                if (dist < CONNECTION_DIST) {
+                    const alpha = (1 - dist / CONNECTION_DIST) * 0.4;
+                    ctx.strokeStyle = node.color === 'cyan' 
+                        ? `rgba(6, 182, 212, ${alpha})` 
+                        : `rgba(139, 92, 246, ${alpha})`;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(node.x, node.y);
+                    ctx.lineTo(other.x, other.y);
+                    ctx.stroke();
                 }
             }
             
-            r = r + (255 - r) * p.threatLevel;
-            g = g + (50 - g) * p.threatLevel;
-            b = b + (50 - b) * p.threatLevel;
-
-            p.vx *= 0.94;
-            p.vy *= 0.94;
-            
-            const alpha = 0.3 + Math.sin(p.pulse) * 0.5;
-            const colorString = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}`;
-
-            if (isWarping) {
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(p.x, p.y - (warpY * 3));
-                ctx.strokeStyle = `${colorString}, ${alpha})`;
-                ctx.lineWidth = p.size;
-                ctx.stroke();
-            } else {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fillStyle = `${colorString}, ${alpha})`;
-                ctx.fill();
-            }
-
-            if (!isWarping) {
-                for (let j = i + 1; j < particles.length; j++) {
-                    const p2 = particles[j];
-                    const dx = p.x - p2.x;
-                    const dy = p.y - p2.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < CONNECTION_DIST) {
-                        const opacity = (1 - dist / CONNECTION_DIST) * 0.15;
-                        ctx.beginPath();
-                        const isThreat = Math.max(p.threatLevel, p2.threatLevel);
-                        const lr = 6 + (255 - 6) * isThreat;
-                        const lg = 182 + (50 - 182) * isThreat;
-                        const lb = 212 + (50 - 212) * isThreat;
-
-                        ctx.strokeStyle = `rgba(${Math.floor(lr)}, ${Math.floor(lg)}, ${Math.floor(lb)}, ${opacity})`;
-                        ctx.lineWidth = 0.5;
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
-                    }
+            // Mouse Connector
+            if (mouse.active) {
+                const dx = mouse.x - node.x;
+                const dy = mouse.y - node.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 200) {
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/200})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(mouse.x, mouse.y);
+                    ctx.lineTo(node.x, node.y);
+                    ctx.stroke();
                 }
             }
+
+            // Draw Node
+            ctx.fillStyle = node.color === 'cyan' ? '#06b6d4' : '#8b5cf6';
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Glow
+            const glow = node.color === 'cyan' ? 'rgba(6, 182, 212, 0.3)' : 'rgba(139, 92, 246, 0.3)';
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, node.radius * 3, 0, Math.PI * 2);
+            ctx.fill();
         });
     };
 
     const drawFluidAether = () => {
-        ctx.fillStyle = '#F8FAFC';
-        ctx.fillRect(0, 0, width, height);
-
-        const currentVelocity = scrollVelocity.get();
-
+        ctx.clearRect(0, 0, width, height);
+        
         orbs.forEach(orb => {
-            orb.angle += orb.angleSpeed;
-            let dx = Math.cos(orb.angle) * 0.5 + orb.vx;
-            let dy = Math.sin(orb.angle) * 0.5 + orb.vy;
-            
-            const warpY = -(currentVelocity / 100); 
-            orb.y += warpY;
+            orb.x += orb.vx;
+            orb.y += orb.vy;
 
-            orb.x += dx;
-            orb.y += dy;
+            // Bounce
+            if (orb.x < 0 || orb.x > width) orb.vx *= -1;
+            if (orb.y < 0 || orb.y > height) orb.vy *= -1;
 
-            // Intense Mouse Interaction
             if (mouse.active) {
                 const dx = orb.x - mouse.x;
                 const dy = orb.y - mouse.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 
-                // Increased interaction radius for "ripple" feel
-                const INTERACTION_RADIUS = 500;
-                
-                if (dist < INTERACTION_RADIUS) {
-                    const force = Math.pow((INTERACTION_RADIUS - dist) / INTERACTION_RADIUS, 2); // Exponential force
-                    const angle = Math.atan2(dy, dx);
-                    
-                    // Violent push
-                    orb.vx += Math.cos(angle) * force * 3.0;
-                    orb.vy += Math.sin(angle) * force * 3.0;
-                    
-                    // Ripple distortion effect on radius
-                    const velocityMag = Math.sqrt(orb.vx * orb.vx + orb.vy * orb.vy);
-                    orb.radius = orb.baseRadius + (velocityMag * 5) + (Math.sin(dist * 0.1) * 20);
-                } else {
-                    // Elastic return
-                    orb.radius += (orb.baseRadius - orb.radius) * 0.05;
+                // Intense Interaction Logic
+                if (dist < 500) {
+                    const force = (500 - dist) / 500;
+                    // Strong push away
+                    orb.x += (dx / dist) * force * 15; 
+                    orb.y += (dy / dist) * force * 15;
+                    // Add slight random jitter for "energy" feel
+                    orb.x += (Math.random() - 0.5) * 2;
+                    orb.y += (Math.random() - 0.5) * 2;
                 }
-            } else {
-                 orb.radius += (orb.baseRadius - orb.radius) * 0.05;
             }
 
-            // Boundary wrapping
-            if (orb.x < -orb.radius) orb.x = width + orb.radius;
-            if (orb.x > width + orb.radius) orb.x = -orb.radius;
-            if (orb.y < -orb.radius) orb.y = height + orb.radius;
-            if (orb.y > height + orb.radius) orb.y = -orb.radius;
-
-            // Damping
-            orb.vx *= 0.96;
-            orb.vy *= 0.96;
-
-            const gradient = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, Math.max(0, orb.radius));
+            const gradient = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.radius);
             gradient.addColorStop(0, orb.color);
             gradient.addColorStop(1, 'rgba(255,255,255,0)');
-            
+
             ctx.fillStyle = gradient;
             ctx.beginPath();
-            ctx.arc(orb.x, orb.y, Math.max(0, orb.radius), 0, Math.PI * 2);
+            ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
             ctx.fill();
         });
-        
-        ctx.fillStyle = 'rgba(248, 250, 252, 0.3)';
-        ctx.fillRect(0, 0, width, height);
     };
 
-    const render = () => {
+    const render = (time: number) => {
+        // Safe access to velocity
+        const velocity = scrollVelocity.get() || 0;
+
         if (theme === 'dark') {
-            drawNeuralGrid();
+            drawDeepSpace(time, velocity);
+            drawNeuralNetwork(velocity);
         } else {
             drawFluidAether();
         }
@@ -285,6 +280,14 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
         mouse.y = e.clientY;
         mouse.active = true;
     };
+
+    const handleTouchMove = (e: TouchEvent) => {
+        if(e.touches.length > 0) {
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+            mouse.active = true;
+        }
+    };
     
     const handleResize = () => {
         init();
@@ -292,13 +295,17 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchstart', handleTouchMove);
     
     init();
-    render();
+    requestAnimationFrame(render);
 
     return () => {
         window.removeEventListener('resize', handleResize);
         window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchstart', handleTouchMove);
         cancelAnimationFrame(animationFrameId);
     };
   }, [theme, scrollVelocity]); 
@@ -306,7 +313,7 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
   return (
     <canvas 
         ref={canvasRef} 
-        className="fixed inset-0 w-full h-full -z-10"
+        className="fixed inset-0 w-full h-full z-0 bg-transparent"
         style={{ pointerEvents: 'none' }} 
     />
   );
