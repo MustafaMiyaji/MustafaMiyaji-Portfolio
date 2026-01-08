@@ -1,3 +1,4 @@
+
 export interface Project {
   id: string;
   badge: string;
@@ -6,7 +7,10 @@ export interface Project {
   visualGradient: string;
   link: string;
   longDescription: string;
-  image?: string;
+  image: {
+    light: string;
+    dark: string;
+  };
 }
 
 export interface SkillCategory {

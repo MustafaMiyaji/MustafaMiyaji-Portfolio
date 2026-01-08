@@ -50,24 +50,34 @@ const MagneticButton: React.FC<{ children: React.ReactNode; href: string; onClic
 };
 
 const CLI_COMMANDS: Record<string, string> = {
-    'help': 'Available commands: about, projects, email, github, linkedin, clear',
+    'help': 'Available commands: about, projects, email, github, linkedin, ls, whoami, date, weather, clear, sudo',
     'about': 'Mustafa Miyaji. Lead Cloud Architect. Neural Grid Architect. Location: PDX.',
     'projects': 'Navigating to project sector...',
     'email': 'Mustafamiyaji32@gmail.com',
     'github': 'Opening GitHub protocol...',
     'linkedin': 'Establishing secure uplink to LinkedIn...',
+    'sudo': 'Usage: sudo [command]. Try "sudo root".',
+    'sudo root': 'ACCESS GRANTED. WELCOME ADMIN.',
+    'ls': 'Listing directories... /projects /about /contact /system /logs',
+    'whoami': 'guest@neural-grid-v1.0',
+    'date': new Date().toLocaleString(),
+    'weather': 'Fetching... Local conditions: 72°F / 22°C (Simulated) - Grid Stable'
 };
 
 const ContactTerminal: React.FC = () => {
     const [input, setInput] = useState('');
     const [history, setHistory] = useState<string[]>(['Initializing secure shell...', 'Type "help" for instructions.']);
+    const [isAdmin, setIsAdmin] = useState(false);
     const { addToast } = useToast();
     const { playKeystroke, playSuccess } = useSound();
-    const bottomRef = useRef<HTMLDivElement>(null);
+    
+    // Use a ref for the scrollable container instead of an element at the bottom
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (bottomRef.current) {
-            bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+        // Use scrollTop to scroll the container internally without affecting window scroll
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
     }, [history]);
 
@@ -78,6 +88,12 @@ const ContactTerminal: React.FC = () => {
         if (lowerCmd === 'clear') {
             setHistory([]);
             return;
+        }
+
+        if (lowerCmd === 'sudo root') {
+            setIsAdmin(true);
+            playSuccess();
+            addToast("ROOT ACCESS GRANTED", 'success');
         }
 
         if (CLI_COMMANDS[lowerCmd]) {
@@ -92,7 +108,7 @@ const ContactTerminal: React.FC = () => {
             playSuccess();
         }
 
-        setHistory(prev => [...prev, `guest@miyaji:~$ ${cmd}`, response]);
+        setHistory(prev => [...prev, `${isAdmin ? 'root@miyaji:~#' : 'guest@miyaji:~$'} ${cmd}`, response]);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -103,31 +119,29 @@ const ContactTerminal: React.FC = () => {
     };
 
     return (
-        <div className="w-full max-w-full md:max-w-md h-[250px] bg-black/90 rounded-lg border border-slate-700/50 p-4 font-mono text-sm relative overflow-hidden shadow-2xl flex flex-col">
+        <div className={`w-full max-w-full md:max-w-md h-[250px] bg-black/90 rounded-lg border ${isAdmin ? 'border-red-500/50' : 'border-slate-700/50'} p-4 font-mono text-sm relative overflow-hidden shadow-2xl flex flex-col transition-colors duration-500`}>
              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10 text-slate-500 text-[10px]">
                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                 <span className="ml-2">guest@miyaji-grid:~</span>
+                 <span className={`ml-2 ${isAdmin ? 'text-red-500 font-bold' : ''}`}>{isAdmin ? 'root@miyaji-grid:~#' : 'guest@miyaji-grid:~'}</span>
              </div>
              
-             <div className="flex-1 overflow-y-auto no-scrollbar space-y-1 mb-2">
+             <div ref={containerRef} className="flex-1 overflow-y-auto no-scrollbar space-y-1 mb-2">
                  {history.map((line, i) => (
-                     <div key={i} className={`text-xs break-all ${line.startsWith('guest') ? 'text-slate-400' : 'text-cyan-400'}`}>{line}</div>
+                     <div key={i} className={`text-xs break-all ${line.startsWith('guest') ? 'text-slate-400' : line.startsWith('root') ? 'text-red-400' : isAdmin ? 'text-red-300' : 'text-cyan-400'}`}>{line}</div>
                  ))}
-                 <div ref={bottomRef} />
              </div>
 
              <form onSubmit={handleSubmit} className="flex gap-2 items-center bg-white/5 p-2 rounded">
-                <span className="text-green-500">$</span>
+                <span className={isAdmin ? 'text-red-500' : 'text-green-500'}>{isAdmin ? '#' : '$'}</span>
                 <input 
                     type="text" 
                     value={input}
                     onChange={(e) => { setInput(e.target.value); playKeystroke(); }}
-                    className="bg-transparent border-none outline-none text-slate-200 w-full placeholder:text-slate-700 text-xs min-w-0"
+                    className={`bg-transparent border-none outline-none w-full placeholder:text-slate-700 text-xs min-w-0 ${isAdmin ? 'text-red-400' : 'text-slate-200'}`}
                     autoComplete="off"
-                    autoFocus
-                    placeholder="Enter command..."
+                    placeholder={isAdmin ? "Awaiting root command..." : "Enter command..."}
                 />
             </form>
         </div>

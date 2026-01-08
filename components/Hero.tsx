@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { motion, useTransform, useScroll, useMotionValueEvent, useMotionValue, useSpring, MotionValue } from 'framer-motion';
-import { ArrowDown, Shield, Scan, Lock, Unlock } from 'lucide-react';
+import { ArrowDown, Shield, Scan, Lock, Unlock, Zap } from 'lucide-react';
 import { useSound } from './SoundManager';
 
 const LETTERS_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ΞΠΣΩλΔ∇ΦΨ";
@@ -153,8 +153,8 @@ const DecoderText: React.FC<{ text: string; className?: string }> = ({ text, cla
 const Hero: React.FC = () => {
   const containerRef = useRef<HTMLElement>(null);
   const mouseX = useMotionValue(-1000);
-  const mouseY = useMotionValue(-1000);
-  const { playHover } = useSound();
+  const mouseY = useMotionValue(0);
+  const { playHover, playClick } = useSound();
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -164,6 +164,7 @@ const Hero: React.FC = () => {
   const [percent, setPercent] = useState(0);
   const [isGlitching, setIsGlitching] = useState(true);
   const [hasScrolledPastHalf, setHasStartedPastHalf] = useState(false);
+  const [showAberration, setShowAberration] = useState(false);
 
   const hudOpacity = useTransform(scrollYProgress, [0.7, 0.85], [1, 0]);
   const gateScale = useTransform(scrollYProgress, [0.85, 1], [1, 0.9]);
@@ -173,10 +174,16 @@ const Hero: React.FC = () => {
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     const p = Math.min(100, Math.max(0, Math.floor((v / 0.5) * 100)));
     setPercent(p);
+    
+    // Trigger intense glitch when scrolling past 55%
     if (v > 0.55 && v < 0.8 && !hasScrolledPastHalf) {
         setHasStartedPastHalf(true);
         setIsGlitching(true);
-        setTimeout(() => setIsGlitching(false), 800);
+        setShowAberration(true); // Trigger chromatic aberration
+        setTimeout(() => {
+             setIsGlitching(false);
+             setShowAberration(false);
+        }, 800);
     }
     if (v < 0.4) {
         setHasStartedPastHalf(false);
@@ -256,10 +263,20 @@ const Hero: React.FC = () => {
                 </div>
             </motion.div>
             
-            <div className="flex flex-col items-center justify-center cursor-default py-10 z-30">
+            <motion.div 
+                className="flex flex-col items-center justify-center cursor-default py-10 z-30"
+                animate={showAberration ? { 
+                    x: [-5, 5, -5, 0],
+                    filter: ["blur(0px)", "blur(2px)", "blur(0px)"]
+                } : { x: 0, filter: "blur(0px)" }}
+                transition={{ duration: 0.3 }}
+            >
                 <div 
                     className="flex flex-wrap justify-center gap-1 md:gap-4 lg:gap-6 px-4 text-center max-w-[100vw]"
                     onMouseEnter={triggerManualGlitch}
+                    style={{
+                        textShadow: showAberration ? '4px 0 rgba(255,0,0,0.7), -4px 0 rgba(0,255,255,0.7)' : 'none'
+                    }}
                 >
                     {name.split("").map((c, i) => (
                         <ScrambleChar 
@@ -273,22 +290,38 @@ const Hero: React.FC = () => {
                         />
                     ))}
                 </div>
-            </div>
+            </motion.div>
 
             <motion.div 
                 style={{ 
                     opacity: useTransform(scrollYProgress, [0.55, 0.65], [0, 1]),
                     y: useTransform(scrollYProgress, [0.55, 0.65], [20, 0]),
                 }}
-                className="absolute bottom-[20vh] text-center max-w-2xl px-6 z-20"
+                className="absolute bottom-[15vh] flex flex-col items-center text-center max-w-2xl px-6 z-20"
             >
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 mb-6 backdrop-blur-md">
                     <Scan size={12} className="text-cyan-700 dark:text-cyan-500" />
                     <span className="text-[9px] font-mono text-cyan-800 dark:text-cyan-400 uppercase tracking-widest">Architect Verified</span>
                 </div>
-                <h2 className="text-xl md:text-3xl font-light text-slate-800 dark:text-slate-200 font-display leading-tight">
+                <h2 className="text-xl md:text-3xl font-light text-slate-800 dark:text-slate-200 font-display leading-tight mb-8">
                     <DecoderText text="Crafting resilient digital architectures for the next generation." className="block" />
                 </h2>
+                
+                {/* CTA Button */}
+                <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                        document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                        playClick();
+                    }}
+                    className="relative group px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-black font-mono text-sm rounded-full overflow-hidden shadow-lg shadow-cyan-500/20"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <span className="relative z-10 flex items-center gap-2 group-hover:text-white transition-colors">
+                        INITIALIZE_UPLINK <Zap size={14} />
+                    </span>
+                </motion.button>
                 
                 <motion.div 
                     className="mt-12 flex flex-col items-center gap-2"

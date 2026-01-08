@@ -6,6 +6,7 @@ import { X, ArrowUpRight, Code2 } from 'lucide-react';
 import { Project } from '../types';
 import { useSound } from './SoundManager';
 import { useToast } from './ToastSystem';
+import { useTheme } from './ThemeContext';
 
 const projects: Project[] = [
   {
@@ -16,7 +17,10 @@ const projects: Project[] = [
     visualGradient: 'from-orange-500/10 to-red-600/20',
     link: 'https://careerstealth.app/',
     longDescription: "A sophisticated AI agent powered by Gemini that simulates various HR personas (The Grumpy Recruiter, The Tech Lead, The Startup Founder) to analyze resumes. It parses PDFs, evaluates keywords against ATS standards, and provides specific, actionable feedback with a touch of humor.",
-    image: "https://images.unsplash.com/photo-1767612600750-e8b5a43be3b3?q=80&w=1777&auto=format&fit=crop" 
+    image: {
+        light: "https://images.unsplash.com/photo-1767612600750-e8b5a43be3b3?q=80&w=1777&auto=format&fit=crop",
+        dark: "https://images.unsplash.com/photo-1767891002849-c141635217ac?q=80&w=2115&auto=format&fit=crop"
+    }
   },
   {
     id: 'perfectreply',
@@ -26,7 +30,10 @@ const projects: Project[] = [
     visualGradient: 'from-purple-500/10 to-pink-600/20',
     link: 'https://perfectreply.tech',
     longDescription: "An empathy-driven engine that analyzes screenshots of conversations and audio snippets to determine the 'vibe'. It suggests replies that aren't just grammatically correct but emotionally calibrated to the specific relationship dynamic.",
-    image: "https://images.unsplash.com/photo-1767612600629-fce3bb48b50e?q=80&w=1778&auto=format&fit=crop"
+    image: {
+        light: "https://images.unsplash.com/photo-1767891003043-dfade1a8c5bc?q=80&w=2114&auto=format&fit=crop",
+        dark: "https://images.unsplash.com/photo-1767612600629-fce3bb48b50e?q=80&w=1778&auto=format&fit=crop"
+    }
   },
   {
     id: 'blockchain-logs',
@@ -36,7 +43,10 @@ const projects: Project[] = [
     visualGradient: 'from-blue-500/10 to-slate-600/20',
     link: 'https://github.com/MustafaMiyaji',
     longDescription: "Developed a decentralized logging system to record immutable deployment audit trails for DevOps pipelines. Integrated Blockchain technology to ensure transparency and prevent tampering of CI/CD build logs.",
-    image: "https://images.unsplash.com/photo-1767612600650-fefb103d537d?q=80&w=2079&auto=format&fit=crop"
+    image: {
+        light: "https://images.unsplash.com/photo-1767891002869-2a6cd0135cde?q=80&w=2113&auto=format&fit=crop",
+        dark: "https://images.unsplash.com/photo-1767612600650-fefb103d537d?q=80&w=2079&auto=format&fit=crop"
+    }
   },
   {
     id: 'aws-vpc',
@@ -46,7 +56,10 @@ const projects: Project[] = [
     visualGradient: 'from-yellow-500/10 to-orange-600/20',
     link: 'https://github.com/MustafaMiyaji',
     longDescription: "This project provides a detailed implementation of an AWS Virtual Private Cloud (VPC) with a secure network architecture. The deployment process includes configuring public and private subnets, setting up a NAT gateway, and deploying a bastion server for secure SSH access to internal resources.",
-    image: "https://images.unsplash.com/photo-1767612600648-34c9b1fe6bda?q=80&w=2110&auto=format&fit=crop"
+    image: {
+        light: "https://images.unsplash.com/photo-1767891002831-0e00b157fe14?q=80&w=2116&auto=format&fit=crop",
+        dark: "https://images.unsplash.com/photo-1767612600648-34c9b1fe6bda?q=80&w=2110&auto=format&fit=crop"
+    }
   }
 ];
 
@@ -69,6 +82,9 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
   const y = useMotionValue(0);
   const [isHovered, setIsHovered] = useState(false);
   const { playHover, playClick } = useSound();
+  const { theme } = useTheme();
+
+  const currentImage = theme === 'dark' ? project.image.dark : project.image.light;
 
   const rotateX = useSpring(useTransform(y, [-100, 100], [5, -5]), { stiffness: 400, damping: 30 });
   const rotateY = useSpring(useTransform(x, [-100, 100], [-5, 5]), { stiffness: 400, damping: 30 });
@@ -107,10 +123,13 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
       <div className="absolute inset-0 z-0 bg-slate-900 overflow-hidden">
         {/* Main Image */}
         <motion.img 
-            src={project.image} 
+            key={currentImage}
+            src={currentImage} 
             alt={project.headline} 
             className="w-full h-full object-cover relative z-10"
+            initial={{ opacity: 0 }}
             animate={{
+                opacity: 1,
                 scale: isHovered ? 1.1 : 1,
                 filter: isHovered ? 'brightness(0.4) saturate(1.2)' : 'brightness(0.9) saturate(1)'
             }}
@@ -120,7 +139,7 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
 
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent z-10" />
 
-      {/* ENHANCED GLARE EFFECT */}
+      {/* ENHANCED GLARE EFFECT - PULSING */}
       <motion.div 
         className="absolute inset-0 z-20 pointer-events-none mix-blend-overlay"
         animate={isHovered ? {
@@ -128,7 +147,7 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
             opacity: [0.3, 0.7, 0.3]
         } : {
             backgroundPosition: ["0% 50%", "100% 50%"],
-            opacity: [0.05, 0.2, 0.05]
+            opacity: [0.05, 0.15, 0.05]
         }}
         transition={{
             backgroundPosition: { duration: isHovered ? 3 : 8, repeat: Infinity, ease: "linear" },
@@ -202,6 +221,10 @@ const Modal = ({ selectedId, onClose, selectedProject }: { selectedId: string, o
     // Portal to body to avoid transform clipping
     if (typeof document === 'undefined') return null;
     
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { theme } = useTheme();
+    const currentImage = theme === 'dark' ? selectedProject.image.dark : selectedProject.image.light;
+    
     return createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 lg:p-12">
             <motion.div 
@@ -216,7 +239,7 @@ const Modal = ({ selectedId, onClose, selectedProject }: { selectedId: string, o
                 className="relative w-full max-w-6xl bg-white dark:bg-[#0a0a0a] rounded-[2rem] md:rounded-[2.5rem] overflow-hidden border border-slate-200 dark:border-white/10 shadow-2xl flex flex-col lg:flex-row h-full max-h-[90vh] lg:max-h-[800px] z-10"
             >
                 <div className="w-full lg:w-1/2 h-[200px] lg:h-full relative overflow-hidden bg-slate-800 shrink-0">
-                    <img src={selectedProject.image} className="w-full h-full object-cover" alt="" />
+                    <img key={currentImage} src={currentImage} className="w-full h-full object-cover" alt="" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 </div>
                 

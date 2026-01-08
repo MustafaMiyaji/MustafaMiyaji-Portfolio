@@ -95,7 +95,7 @@ const AboutChat: React.FC = () => {
         whileInView={{ opacity: 1, scale: 1 }}
         onViewportEnter={onInView}
         viewport={{ once: true, amount: 0.3 }}
-        className="bg-white/80 dark:bg-black/40 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-6 md:p-12 shadow-2xl relative overflow-hidden min-h-[600px]"
+        className="bg-white dark:bg-black/40 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-6 md:p-12 shadow-xl dark:shadow-2xl relative overflow-hidden min-h-[600px]"
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent animate-shimmer" />
         
@@ -142,7 +142,7 @@ const AboutChat: React.FC = () => {
                 </div>
               )}
               
-              <div className={`max-w-[85%] md:max-w-[70%] p-4 md:p-6 rounded-3xl text-sm md:text-base leading-relaxed group transition-all duration-300
+              <div className={`max-w-[85%] md:max-w-[70%] p-4 md:p-6 rounded-3xl text-sm md:text-base leading-relaxed group transition-all duration-300 shadow-sm
                 ${msg.isSystem ? 'w-full text-center bg-transparent border-0 shadow-none text-slate-500 dark:text-slate-500 font-mono text-[10px] my-2 md:my-4 tracking-wider italic' : ''}
                 ${!msg.isSystem && msg.user === 'Mustafa' 
                   ? 'bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/20 text-cyan-900 dark:text-cyan-50 rounded-tr-none' 

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
-import { Award, CheckCircle, Shield, Hexagon, X, ChevronRight } from 'lucide-react';
+import { Award, CheckCircle, Shield, Hexagon, X, ChevronRight, ZoomIn } from 'lucide-react';
 
 const certs = [
   { 
@@ -27,6 +27,12 @@ const certs = [
     title: "Oracle Cloud Infrastructure 2025 Certified Foundations Associate", 
     issuer: "Oracle", 
     color: "from-red-500 to-orange-600",
+    image: "https://images.unsplash.com/photo-1767883921100-b8e1c167c75d?q=80&w=1351&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  },
+  { 
+    title: "Oracle Cloud Data Platform 2025 Certified Foundations Associate", 
+    issuer: "Oracle", 
+    color: "from-red-500 to-orange-600",
     image: "https://images.unsplash.com/photo-1767620922546-bff7bc99284f?q=80&w=1351&auto=format&fit=crop"
   },
   { 
@@ -36,16 +42,34 @@ const certs = [
     image: "https://images.unsplash.com/photo-1767620922525-4eed3df008b2?q=80&w=1396&auto=format&fit=crop"
   },
   { 
+    title: "IBM Cloud Technical Advocate v4", 
+    issuer: "IBM", 
+    color: "from-blue-600 to-indigo-600",
+    image: "http://images.unsplash.com/photo-1767883797428-44808fb98611?q=80&w=1351&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  },
+  { 
+    title: "Red Hat Certified Enterprise Linux System Administrator", 
+    issuer: "Red Hat", 
+    color: "from-red-600 to-red-800",
+    image: "https://images.unsplash.com/photo-1767883797540-6a7641e510a5?q=80&w=1351&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  },
+  { 
     title: "Certified Network Security Practitioner (CNSP)", 
     issuer: "The SecOps Group", 
     color: "from-blue-600 to-cyan-600",
-    image: "https://images.unsplash.com/photo-1558494949-ef526b0042a0?q=80&w=2668&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1767883930326-de9f905436b3?q=80&w=1421&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
   },
   { 
     title: "Cloud and DevOps Mastery Training 2025", 
     issuer: "Exlearn Technologies", 
     color: "from-yellow-500 to-amber-600",
-    image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=2670&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1767885372322-8dae334c4567?q=80&w=1418&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  },
+  { 
+    title: "NPTEL Online Certification: E-Business", 
+    issuer: "NPTEL", 
+    color: "from-teal-500 to-emerald-600", 
+    image: "https://images.unsplash.com/photo-1767883925915-ce91d2246847?q=80&w=1410&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
   }
 ];
 
@@ -71,15 +95,15 @@ const CertContent: React.FC<{ cert: typeof certs[0]; isGrid?: boolean }> = ({ ce
                 <CheckCircle size={14} className="text-green-500/50" />
             </div>
 
-            {/* Main Title - Enhanced with Neon Glow on Hover */}
+            {/* Main Title */}
             <div className={`relative z-20 ${isGrid ? 'mb-2' : 'mb-4'} overflow-visible`}>
                 <h4 className={`${isGrid ? 'text-sm' : 'text-lg'} font-bold text-slate-900 dark:text-white font-['Space_Grotesk'] leading-tight transition-all duration-300 group-hover:text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]`}>
                     {cert.title}
                 </h4>
             </div>
 
-            {/* Preview Image */}
-            <div className="flex-1 bg-slate-50 dark:bg-black/40 rounded-lg border border-slate-200 dark:border-white/5 relative overflow-hidden group-hover:border-cyan-400/50 group-hover:shadow-[0_0_15px_rgba(34,211,238,0.3)] transition-all duration-300">
+            {/* Preview Image - Enhanced Glow */}
+            <div className="flex-1 bg-slate-50 dark:bg-black/40 rounded-lg border border-slate-200 dark:border-white/5 relative overflow-hidden group-hover:border-cyan-400/50 group-hover:shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all duration-300">
                 {!imageError ? (
                     <img 
                         src={cert.image} 
@@ -92,6 +116,13 @@ const CertContent: React.FC<{ cert: typeof certs[0]; isGrid?: boolean }> = ({ ce
                         <div className={`absolute -right-4 -top-4 w-24 h-24 bg-gradient-to-br ${cert.color} rounded-full opacity-20 blur-xl`} />
                         <Award size={24} className="text-slate-400 dark:text-white/20 mb-2 relative z-10" />
                         <div className="text-[8px] text-slate-400 font-mono">NO PREVIEW</div>
+                    </div>
+                )}
+                
+                {/* View Icon Overlay (Only on grid) */}
+                {isGrid && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                        <ZoomIn className="text-white" size={24} />
                     </div>
                 )}
             </div>
@@ -110,15 +141,60 @@ const CertContent: React.FC<{ cert: typeof certs[0]; isGrid?: boolean }> = ({ ce
 const MobileCard: React.FC<{ cert: typeof certs[0]; onClick: () => void }> = ({ cert, onClick }) => (
     <div 
         onClick={onClick}
-        data-cursor="magnetic"
         className="min-w-[280px] w-[280px] h-[350px] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden snap-center shrink-0 cursor-pointer"
     >
         <CertContent cert={cert} />
     </div>
 );
 
-// --- Expanded Modal ---
-const ExpandedGrid: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+// --- Lightbox Component ---
+const Lightbox: React.FC<{ cert: typeof certs[0]; onClose: () => void }> = ({ cert, onClose }) => {
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[11000] bg-black/95 flex flex-col items-center justify-center p-4 md:p-10"
+            onClick={onClose}
+        >
+             <button 
+                onClick={onClose}
+                className="absolute top-6 right-6 p-4 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-[11001]"
+            >
+                <X size={24} />
+            </button>
+
+            <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="relative max-w-5xl w-full h-auto max-h-[80vh] flex items-center justify-center"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <img 
+                    src={cert.image} 
+                    alt={cert.title} 
+                    className="w-full h-full object-contain rounded-lg shadow-2xl border border-white/10"
+                />
+            </motion.div>
+            
+            <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="mt-6 text-center"
+            >
+                <h3 className="text-white text-xl md:text-2xl font-bold font-display">{cert.title}</h3>
+                <span className="text-cyan-400 font-mono text-sm tracking-widest uppercase">{cert.issuer}</span>
+            </motion.div>
+        </motion.div>,
+        document.body
+    );
+}
+
+// --- Expanded Modal (The Vault) ---
+const ExpandedGrid: React.FC<{ onClose: () => void; onSelectCert: (cert: typeof certs[0]) => void }> = ({ onClose, onSelectCert }) => {
     if (typeof document === 'undefined') return null;
 
     return createPortal(
@@ -141,7 +217,7 @@ const ExpandedGrid: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 <div className="p-6 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white dark:bg-[#0a0a0a]">
                     <div className="flex flex-col">
                         <h2 className="text-xl md:text-2xl font-display font-bold text-slate-900 dark:text-white">Credential Vault</h2>
-                        <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400 tracking-widest uppercase">Verified Blockchain Records</span>
+                        <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400 tracking-widest uppercase">Select Record to Inspect</span>
                     </div>
                     <button 
                         onClick={onClose}
@@ -160,8 +236,8 @@ const ExpandedGrid: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="group relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-lg hover:shadow-cyan-500/30 hover:border-cyan-400 transition-all duration-300 cursor-pointer"
-                                data-cursor="magnetic"
+                                className="group relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-lg hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] hover:border-cyan-400 transition-all duration-300 cursor-pointer"
+                                onClick={() => onSelectCert(cert)}
                             >
                                 <CertContent cert={cert} isGrid />
                             </motion.div>
@@ -176,9 +252,9 @@ const ExpandedGrid: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
 const CertStack: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedCert, setSelectedCert] = useState<typeof certs[0] | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   
-  // Only use top 5 for desktop deck to keep it clean
   const visibleStack = certs.slice(0, 5); 
 
   return (
@@ -205,8 +281,6 @@ const CertStack: React.FC = () => {
       >
          <div className="relative w-full h-full">
             {visibleStack.map((cert, index) => {
-               // Calculate fan position
-               // When hovered (fanned out), we calculate new Y and Scale
                const isTop = index === 0;
                const offset = index * 12;
                
@@ -220,14 +294,13 @@ const CertStack: React.FC = () => {
                         }}
                         initial={{ y: offset, scale: 1 - index * 0.04 }}
                         animate={{ 
-                            y: isHovered ? index * 80 : offset, // Spread out significantly on container hover
+                            y: isHovered ? index * 80 : offset, 
                             scale: isHovered ? 1 : 1 - index * 0.04,
                             rotateX: isHovered ? 0 : 0
                         }}
                         transition={{ duration: 0.4, type: "spring", stiffness: 200, damping: 20 }}
                         onClick={() => setIsExpanded(true)}
                         whileHover={{ scale: 1.05, zIndex: 20 }}
-                        data-cursor="magnetic"
                    >
                         <div className="w-full h-full relative group/card">
                              <CertContent cert={cert} />
@@ -250,7 +323,7 @@ const CertStack: React.FC = () => {
           {certs.map((cert, index) => (
               <MobileCard key={index} cert={cert} onClick={() => setIsExpanded(true)} />
           ))}
-          <div className="snap-center shrink-0 w-8" /> {/* Spacer */}
+          <div className="snap-center shrink-0 w-8" />
       </div>
       
       {/* Mobile Hint */}
@@ -263,9 +336,19 @@ const CertStack: React.FC = () => {
         [ Click stack to access full registry ]
       </p>
 
+      {/* --- MODALS --- */}
       <AnimatePresence>
         {isExpanded && (
-            <ExpandedGrid onClose={() => setIsExpanded(false)} />
+            <ExpandedGrid 
+                onClose={() => setIsExpanded(false)} 
+                onSelectCert={(cert) => setSelectedCert(cert)}
+            />
+        )}
+        {selectedCert && (
+            <Lightbox 
+                cert={selectedCert} 
+                onClose={() => setSelectedCert(null)} 
+            />
         )}
       </AnimatePresence>
     </section>

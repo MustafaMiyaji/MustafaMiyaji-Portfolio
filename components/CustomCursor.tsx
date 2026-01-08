@@ -1,37 +1,39 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, useSpring, useMotionValue } from 'framer-motion';
 
 const CustomCursor: React.FC = () => {
   const [isHovering, setIsHovering] = useState(false);
   const [magnetRect, setMagnetRect] = useState<DOMRect | null>(null);
   
+  // Track raw mouse position to restore it during scroll events
+  const mousePos = useRef({ x: -100, y: -100 });
+  
   // Use springs for smooth magnetic physics
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
 
-  // Adjusted physics for a "heavier" pull
+  // Adjusted physics: Reduced mass for snappier recovery
   const springConfig = isHovering 
-    ? { stiffness: 100, damping: 25, mass: 0.8 } // Magnetic: bouncier, snap, heavy lag
-    : { stiffness: 800, damping: 40, mass: 0.1 }; // Normal: Sharp follow
+    ? { stiffness: 120, damping: 20, mass: 0.5 } // Magnetic
+    : { stiffness: 1000, damping: 50, mass: 0.1 }; // Sharp follow
 
   const smoothX = useSpring(cursorX, springConfig);
   const smoothY = useSpring(cursorY, springConfig);
 
   useEffect(() => {
     const mouseMove = (e: MouseEvent) => {
+      // Always update raw position
+      mousePos.current = { x: e.clientX, y: e.clientY };
+
       if (isHovering && magnetRect) {
-        // Magnetic Logic: Pull towards center of element with a lag
+        // Magnetic Logic: Pull towards center of element
         const centerX = magnetRect.left + magnetRect.width / 2;
         const centerY = magnetRect.top + magnetRect.height / 2;
         
-        // Calculate distance from center (delta)
         const dx = e.clientX - centerX;
         const dy = e.clientY - centerY;
         
-        // Apply magnetic pull: 
-        // We move the cursor towards the mouse, but clamped heavily towards the center of the element
-        // The factor 0.2 means it moves only 20% of the distance the mouse moves away from center
         const magneticX = centerX + dx * 0.2; 
         const magneticY = centerY + dy * 0.2;
 
@@ -46,8 +48,6 @@ const CustomCursor: React.FC = () => {
 
     const handleMouseOver = (e: MouseEvent) => {
         const target = e.target as HTMLElement;
-        
-        // Check for specific clickable elements that we want to magnetize to
         const magneticElement = 
             target.closest('button') || 
             target.closest('a') || 
@@ -66,16 +66,20 @@ const CustomCursor: React.FC = () => {
     };
 
     const handleScroll = () => {
-        // Clear magnet on scroll to prevent cursor getting stuck in wrong pos relative to viewport
+        // CRITICAL FIX: On scroll, immediately reset cursor to raw mouse position
+        // This prevents the cursor from sticking to a stale magnetic position
+        // as the element moves away during scroll.
         if (isHovering) {
             setIsHovering(false);
             setMagnetRect(null);
         }
+        cursorX.set(mousePos.current.x);
+        cursorY.set(mousePos.current.y);
     };
 
     window.addEventListener('mousemove', mouseMove);
     window.addEventListener('mouseover', handleMouseOver);
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener('mousemove', mouseMove);
@@ -88,7 +92,7 @@ const CustomCursor: React.FC = () => {
     <>
       {/* Main Dot - Stays sharp */}
       <motion.div
-        className="fixed top-0 left-0 w-3 h-3 bg-white dark:bg-cyan-400 rounded-full pointer-events-none z-[50000] mix-blend-difference"
+        className="fixed top-0 left-0 w-3 h-3 bg-slate-900 dark:bg-cyan-400 rounded-full pointer-events-none z-[50000] mix-blend-difference"
         style={{
           x: smoothX,
           y: smoothY,
@@ -100,9 +104,9 @@ const CustomCursor: React.FC = () => {
         }}
       />
       
-      {/* Magnetic Outer Ring - The "Lazy" Follower */}
+      {/* Magnetic Outer Ring */}
       <motion.div
-        className="fixed top-0 left-0 w-10 h-10 border border-black dark:border-white rounded-full pointer-events-none z-[49999] opacity-50"
+        className="fixed top-0 left-0 w-10 h-10 border border-slate-900 dark:border-white rounded-full pointer-events-none z-[49999] opacity-50"
         style={{
             x: smoothX,
             y: smoothY,
@@ -113,7 +117,7 @@ const CustomCursor: React.FC = () => {
           width: isHovering ? 80 : 40,
           height: isHovering ? 80 : 40,
           borderColor: isHovering ? 'rgba(6,182,212, 0.6)' : 'currentColor',
-          borderWidth: isHovering ? '1px' : '1px',
+          borderWidth: isHovering ? '2px' : '1px',
           backgroundColor: isHovering ? 'rgba(6,182,212, 0.05)' : 'transparent'
         }}
         transition={{ type: "spring", stiffness: 200, damping: 20 }}

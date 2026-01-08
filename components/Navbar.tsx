@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, User, Briefcase, Award, Volume2, VolumeX, Clock, Sun, Moon, Search, Command, Cpu } from 'lucide-react';
+import { Home, User, Briefcase, Award, Volume2, VolumeX, Clock, Sun, Moon, Search, Command, Cpu, Send } from 'lucide-react';
 import { useSound } from './SoundManager';
 import { useTheme } from './ThemeContext';
 
@@ -11,6 +11,7 @@ const navItems = [
   { id: 'experience', icon: <Cpu size={18} />, label: 'History' },
   { id: 'projects', icon: <Briefcase size={18} />, label: 'Ops' },
   { id: 'certs', icon: <Award size={18} />, label: 'Vault' },
+  { id: 'contact', icon: <Send size={18} />, label: 'Uplink' },
 ];
 
 const AudioVisualizer = ({ active }: { active: boolean }) => (

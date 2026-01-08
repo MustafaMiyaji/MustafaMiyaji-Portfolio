@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion';
+import { useTheme } from './ThemeContext';
 
 const skillsRow1 = [
   "Oracle OCI", "AWS", "Azure", "Red Team Ops", "Docker", "Kubernetes", "Terraform", "Jenkins"
@@ -13,6 +14,7 @@ const skillsRow2 = [
 const SkillPill: React.FC<{ skill: string }> = ({ skill }) => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  const { theme } = useTheme();
   
   function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
     const { left, top } = currentTarget.getBoundingClientRect();
@@ -25,32 +27,32 @@ const SkillPill: React.FC<{ skill: string }> = ({ skill }) => {
   return (
     <motion.div
       onMouseMove={handleMouseMove}
-      whileHover={{ y: -8, scale: 1.05 }} // Enhanced Lift
+      whileHover={{ y: -6, scale: 1.05 }} // Enhanced Lift
       whileTap={{ scale: 0.95 }}
       data-cursor="magnetic"
-      className="relative flex items-center gap-3 px-6 py-3 md:px-8 md:py-4 rounded-full bg-white dark:bg-black/30 backdrop-blur-sm border border-slate-200 dark:border-white/10 overflow-hidden cursor-crosshair group transition-all duration-300 hover:border-cyan-400 hover:shadow-[0_10px_20px_rgba(6,182,212,0.15)]"
+      className="relative flex items-center gap-3 px-6 py-3 md:px-8 md:py-4 rounded-full bg-white dark:bg-black/30 backdrop-blur-sm border border-slate-200 dark:border-white/10 overflow-hidden cursor-crosshair group/pill transition-all duration-300 hover:border-cyan-400 hover:shadow-[0_15px_30px_rgba(6,182,212,0.15)] select-none"
     >
       {/* Spotlight Effect - Brighter and follows cursor */}
       <motion.div
-        className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 group-hover:opacity-100"
+        className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 group-hover/pill:opacity-100"
         style={{
           background: useMotionTemplate`
             radial-gradient(
-              120px circle at ${mouseX}px ${mouseY}px,
-              rgba(6, 182, 212, 0.4),
+              150px circle at ${mouseX}px ${mouseY}px,
+              ${theme === 'dark' ? 'rgba(6, 182, 212, 0.4)' : 'rgba(59, 130, 246, 0.4)'},
               transparent 80%
             )
           `,
         }}
       />
       
-      <span className="relative z-10 w-2 h-2 bg-slate-300 dark:bg-slate-600 rounded-full group-hover:bg-cyan-400 group-hover:shadow-[0_0_12px_rgba(34,211,238,1)] transition-all duration-300"></span>
+      <span className="relative z-10 w-2 h-2 bg-slate-300 dark:bg-slate-600 rounded-full group-hover/pill:bg-cyan-400 group-hover/pill:shadow-[0_0_12px_rgba(34,211,238,1)] transition-all duration-300"></span>
       
       <div className="relative z-10 flex">
         {letters.map((char, i) => (
            <span
              key={i}
-             className="text-lg md:text-xl font-mono font-bold text-slate-700 dark:text-slate-300 group-hover:text-cyan-400 group-hover:drop-shadow-[0_0_5px_rgba(34,211,238,0.8)] transition-colors"
+             className="text-lg md:text-xl font-mono font-bold text-slate-700 dark:text-slate-300 group-hover/pill:text-cyan-400 group-hover/pill:drop-shadow-[0_0_5px_rgba(34,211,238,0.8)] transition-colors"
            >
              {char === " " ? "\u00A0" : char}
            </span>
@@ -70,7 +72,7 @@ const MarqueeRow: React.FC<MarqueeRowProps> = ({ skills, direction, speed }) => 
    const repeatedSkills = [...skills, ...skills, ...skills, ...skills]; 
    
    return (
-    <div className="flex overflow-hidden whitespace-nowrap w-full group">
+    <div className="flex overflow-hidden whitespace-nowrap w-full group select-none">
       <motion.div
         initial={{ x: direction === 'left' ? "0%" : "-100%" }}
         animate={{ x: direction === 'left' ? "-100%" : "0%" }}
