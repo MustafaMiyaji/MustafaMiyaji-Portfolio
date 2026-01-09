@@ -6,6 +6,7 @@ interface SoundContextType {
   playClick: () => void;
   playSuccess: () => void;
   playKeystroke: () => void;
+  triggerHaptic: (pattern?: number | number[]) => void;
   toggleMute: () => void;
   isMuted: boolean;
 }
@@ -86,6 +87,13 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setTimeout(() => playTone(659, 'sine', 0.4, 0.05), 200);
   };
 
+  // --- HAPTIC ENGINE ---
+  const triggerHaptic = (pattern: number | number[] = 10) => {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate(pattern);
+      }
+  };
+
   // Ambient Drone Logic
   useEffect(() => {
       if (!isMuted && audioCtxRef.current) {
@@ -126,7 +134,7 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const toggleMute = () => setIsMuted(!isMuted);
 
   return (
-    <SoundContext.Provider value={{ playHover, playClick, playSuccess, playKeystroke, toggleMute, isMuted }}>
+    <SoundContext.Provider value={{ playHover, playClick, playSuccess, playKeystroke, triggerHaptic, toggleMute, isMuted }}>
       {children}
     </SoundContext.Provider>
   );

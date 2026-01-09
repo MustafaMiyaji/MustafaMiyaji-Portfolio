@@ -159,8 +159,21 @@ const Footer: React.FC = () => {
   return (
     <footer className="w-full py-20 px-4 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black relative overflow-hidden">
         
+        {/* GRAPHIC TYPO BACKGROUND - "MUSTAFA" */}
+        <div className="absolute inset-0 flex items-center justify-center z-0 opacity-10 dark:opacity-5 pointer-events-none select-none overflow-hidden">
+             <h1 
+                className="text-[20vw] md:text-[18vw] font-black font-display text-transparent tracking-tighter blur-[2px] leading-none"
+                style={{ 
+                    WebkitTextStroke: '2px currentColor', 
+                    color: 'rgba(6,182,212,0.8)' // Cyan tint used for stroke color via currentColor
+                }}
+             >
+                MUSTAFA
+             </h1>
+        </div>
+
         {/* Radar Background Animation */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-20 pointer-events-none overflow-hidden">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-20 pointer-events-none overflow-hidden z-0">
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] border border-cyan-500/30 rounded-full" />
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] border border-cyan-500/30 rounded-full" />
             
@@ -204,7 +217,7 @@ const Footer: React.FC = () => {
         </div>
       </div>
       
-      <div className="max-w-6xl mx-auto mt-12 pt-8 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center text-[10px] font-mono text-slate-400 dark:text-gray-600">
+      <div className="max-w-6xl mx-auto mt-12 pt-8 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center text-[10px] font-mono text-slate-400 dark:text-gray-600 relative z-10">
          <p>© 2026 MUSTAFA MIYAJI. ALL RIGHTS RESERVED.</p>
          <button 
            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}

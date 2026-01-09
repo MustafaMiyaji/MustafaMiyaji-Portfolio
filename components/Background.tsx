@@ -5,9 +5,10 @@ import { MotionValue } from 'framer-motion';
 
 interface BackgroundProps {
     scrollVelocity: MotionValue<number>;
+    lowPowerMode: boolean;
 }
 
-const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
+const Background: React.FC<BackgroundProps> = ({ scrollVelocity, lowPowerMode }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { theme } = useTheme();
 
@@ -16,6 +17,11 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { alpha: true }); 
     if (!ctx) return;
+
+    if (lowPowerMode) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return; 
+    }
 
     let animationFrameId: number;
     let width = window.innerWidth;
@@ -28,15 +34,17 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
     const mouse = { x: -1000, y: -1000, active: false };
 
     // --- SYSTEMS CONFIG ---
-    const STAR_COUNT = isMobileDevice ? 60 : 300; 
-    const NODE_COUNT = isMobileDevice ? 25 : 60;
-    const CONNECTION_DIST = 150;
+    // Drastically reduced counts for mobile performance
+    const STAR_COUNT = isMobileDevice ? 40 : 400; 
+    const NODE_COUNT = isMobileDevice ? 15 : 60;
+    const CONNECTION_DIST = isMobileDevice ? 100 : 150;
     const CONNECTION_DIST_SQ = CONNECTION_DIST * CONNECTION_DIST;
 
     // Layer 1: Deep Space Stars
     interface Star {
         x: number;
         y: number;
+        z: number; // Added Z depth for parallax
         size: number;
         baseAlpha: number;
         pulseOffset: number;
@@ -52,7 +60,7 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
         vy: number;
         radius: number;
         color: string;
-        baseColor: string; // Store original color to revert after interaction
+        baseColor: string;
     }
     const nodes: Node[] = [];
 
@@ -63,6 +71,7 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
         vx: number;
         vy: number;
         radius: number;
+        baseRadius: number; // For restoring size
         color: string;
     }
     const orbs: Orb[] = [];
@@ -80,6 +89,7 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
                 stars.push({
                     x: Math.random() * width,
                     y: Math.random() * height,
+                    z: Math.random() * 2 + 0.5, // Depth factor
                     size: Math.random() * 1.5 + 0.5,
                     baseAlpha: Math.random() * 0.5 + 0.2,
                     pulseOffset: Math.random() * Math.PI * 2,
@@ -95,7 +105,7 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
             nodes.push({
                 x: Math.random() * width,
                 y: Math.random() * height,
-                vx: (Math.random() - 0.5) * (isMobileDevice ? 0.3 : 0.5), // Slower on mobile
+                vx: (Math.random() - 0.5) * (isMobileDevice ? 0.3 : 0.5),
                 vy: (Math.random() - 0.5) * (isMobileDevice ? 0.3 : 0.5),
                 radius: Math.random() * 2 + 1.5,
                 color: color,
@@ -103,7 +113,7 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
             });
         }
 
-        // Init Orbs (Light Mode) - Reduced count on mobile
+        // Init Orbs (Light Mode)
         orbs.length = 0;
         if (theme === 'light') {
             const orbCount = isMobileDevice ? 2 : 4;
@@ -112,12 +122,14 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
                 'rgba(37, 99, 235, 0.05)',   // Darker Blue
             ];
             for (let i = 0; i < orbCount; i++) {
+                const radius = Math.random() * (isMobileDevice ? 100 : 300) + (isMobileDevice ? 50 : 150);
                 orbs.push({
                     x: Math.random() * width,
                     y: Math.random() * height,
                     vx: (Math.random() - 0.5) * 0.3,
                     vy: (Math.random() - 0.5) * 0.3,
-                    radius: Math.random() * (isMobileDevice ? 100 : 300) + (isMobileDevice ? 50 : 150),
+                    radius: radius,
+                    baseRadius: radius,
                     color: colors[i % colors.length]
                 });
             }
@@ -127,17 +139,34 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
     const drawDeepSpace = (time: number, velocity: number) => {
         if (theme === 'dark') ctx.clearRect(0, 0, width, height);
         
+        // WARP SPEED CALCULATION
+        // Normalize velocity to a stretch factor (0 to 1)
+        const warpFactor = Math.min(Math.abs(velocity) / 500, 15);
+        const isWarping = warpFactor > 0.1;
+
         ctx.fillStyle = "#FFF";
         stars.forEach(star => {
-            star.y -= velocity * star.scrollSpeed * 0.1;
+            // Move stars based on scroll velocity (parallax)
+            star.y -= velocity * star.scrollSpeed * 0.1 * star.z;
             star.y = (star.y % height + height) % height;
 
             const opacity = star.baseAlpha + Math.sin(time * 0.002 + star.pulseOffset) * 0.2;
-            
             ctx.globalAlpha = opacity; 
+
             ctx.beginPath();
-            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-            ctx.fill();
+            
+            if (isWarping) {
+                // WARP EFFECT: Stretch star into a line
+                const stretchLength = star.size + (warpFactor * 30 * star.z);
+                ctx.moveTo(star.x, star.y);
+                ctx.lineTo(star.x, star.y - stretchLength); // Stretch upwards/downwards based on movement? Actually trail behind
+                ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+                ctx.lineWidth = star.size;
+                ctx.stroke();
+            } else {
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
         });
         ctx.globalAlpha = 1.0;
     };
@@ -146,10 +175,9 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
         const buffer = 100;
         const totalHeight = height + buffer * 2;
         
-        // Define colors based on theme
-        const nodeColorCyan = theme === 'dark' ? '#06b6d4' : '#2563eb'; // Blueprint Blue in Light
-        const nodeColorPurple = theme === 'dark' ? '#8b5cf6' : '#1e40af'; // Dark Blue in Light
-        const warningColor = theme === 'dark' ? '#ef4444' : '#dc2626'; // Red for proximity warning
+        const nodeColorCyan = theme === 'dark' ? '#06b6d4' : '#2563eb';
+        const nodeColorPurple = theme === 'dark' ? '#8b5cf6' : '#1e40af';
+        const warningColor = theme === 'dark' ? '#ef4444' : '#dc2626';
 
         ctx.lineWidth = 1;
 
@@ -162,32 +190,27 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
 
             node.y = ((node.y + buffer) % totalHeight + totalHeight) % totalHeight - buffer;
 
-            // Mouse Repulsion & Color Shift Logic
             let isAgitated = false;
             if (mouse.active) {
                 const dx = mouse.x - node.x;
                 const dy = mouse.y - node.y;
                 const distSq = dx * dx + dy * dy;
-                const interactionRadius = 250 * 250; // Larger radius for repulsion
+                const interactionRadius = 250 * 250; 
 
                 if (distSq < interactionRadius) {
                     const dist = Math.sqrt(distSq);
                     const force = (interactionRadius - distSq) / interactionRadius;
-                    
-                    // Repulsion: Move AWAY from mouse
                     const angle = Math.atan2(dy, dx);
-                    const moveX = Math.cos(angle) * force * 4; // Push strength
+                    const moveX = Math.cos(angle) * force * 4; 
                     const moveY = Math.sin(angle) * force * 4;
                     
                     node.x -= moveX;
                     node.y -= moveY;
                     
-                    // Mark as agitated if very close
                     if (dist < 100) isAgitated = true;
                 }
             }
 
-            // Draw Connections
             for (let j = i + 1; j < nodes.length; j++) {
                 const other = nodes[j];
                 const dx = node.x - other.x;
@@ -196,7 +219,6 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
 
                 if (distSq < CONNECTION_DIST_SQ) {
                     const dist = Math.sqrt(distSq);
-                    // Darker lines in light mode for blueprint look
                     const alpha = (1 - dist / CONNECTION_DIST) * (theme === 'dark' ? 0.4 : 0.15); 
                     
                     ctx.strokeStyle = node.color === 'cyan' || node.color === 'blue'
@@ -210,7 +232,6 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
                 }
             }
             
-            // Draw Node
             if (isAgitated) {
                 ctx.fillStyle = warningColor;
             } else {
@@ -224,14 +245,49 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
     };
 
     const drawFluidAether = () => {
+        if (isMobileDevice) {
+            ctx.clearRect(0, 0, width, height);
+            return;
+        }
+
         ctx.clearRect(0, 0, width, height);
         
         orbs.forEach(orb => {
+            // Mouse Interaction Logic
+            if (mouse.active) {
+                const dx = mouse.x - orb.x;
+                const dy = mouse.y - orb.y;
+                const distSq = dx * dx + dy * dy;
+                const interactionRadius = 400 * 400; // Larger radius for big orbs
+
+                if (distSq < interactionRadius) {
+                    const dist = Math.sqrt(distSq);
+                    const force = (interactionRadius - distSq) / interactionRadius;
+                    const angle = Math.atan2(dy, dx);
+                    
+                    // Repulsion
+                    orb.x -= Math.cos(angle) * force * 5;
+                    orb.y -= Math.sin(angle) * force * 5;
+
+                    // Ripple Distortion: Shrink radius when pushed, like compressing a bubble
+                    const squishFactor = 1 - (force * 0.3);
+                    orb.radius = orb.baseRadius * squishFactor;
+                } else {
+                     // Restore radius
+                     orb.radius += (orb.baseRadius - orb.radius) * 0.05;
+                }
+            } else {
+                orb.radius += (orb.baseRadius - orb.radius) * 0.05;
+            }
+
             orb.x += orb.vx;
             orb.y += orb.vy;
 
-            if (orb.x < 0 || orb.x > width) orb.vx *= -1;
-            if (orb.y < 0 || orb.y > height) orb.vy *= -1;
+            // Soft boundaries
+            if (orb.x < -orb.radius) orb.x = width + orb.radius;
+            if (orb.x > width + orb.radius) orb.x = -orb.radius;
+            if (orb.y < -orb.radius) orb.y = height + orb.radius;
+            if (orb.y > height + orb.radius) orb.y = -orb.radius;
 
             const gradient = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.radius);
             gradient.addColorStop(0, orb.color);
@@ -245,6 +301,7 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
     };
 
     const render = (time: number) => {
+        if (lowPowerMode) return; // Stop rendering loop
         const velocity = scrollVelocity.get() || 0;
 
         if (theme === 'dark') {
@@ -273,6 +330,13 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
     
     const handleResize = () => {
         init();
+        if (lowPowerMode) {
+             const canvas = canvasRef.current;
+             if(canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx?.clearRect(0, 0, canvas.width, canvas.height);
+             }
+        }
     };
 
     window.addEventListener('resize', handleResize);
@@ -280,7 +344,7 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
     window.addEventListener('touchmove', handleTouchMove, { passive: true });
     
     init();
-    requestAnimationFrame(render);
+    if (!lowPowerMode) requestAnimationFrame(render);
 
     return () => {
         window.removeEventListener('resize', handleResize);
@@ -288,7 +352,7 @@ const Background: React.FC<BackgroundProps> = ({ scrollVelocity }) => {
         window.removeEventListener('touchmove', handleTouchMove);
         cancelAnimationFrame(animationFrameId);
     };
-  }, [theme, scrollVelocity]); 
+  }, [theme, scrollVelocity, lowPowerMode]); 
 
   return (
     <canvas 

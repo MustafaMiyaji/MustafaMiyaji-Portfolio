@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { createPortal } from 'react-dom';
-import { X, ArrowUpRight, Code2 } from 'lucide-react';
+import { X, ArrowUpRight, Code2, FolderGit2 } from 'lucide-react';
 import { Project } from '../types';
 import { useSound } from './SoundManager';
-import { useToast } from './ToastSystem';
 import { useTheme } from './ThemeContext';
+import SectionHeading from './SectionHeading';
 
 const projects: Project[] = [
   {
@@ -77,12 +77,23 @@ const TechBadge: React.FC<{ label: string; index: number }> = ({ label, index })
   </motion.div>
 );
 
-const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ project, onClick }) => {
+const ProjectCard: React.FC<{ 
+    project: Project; 
+    onClick: () => void;
+    isHovered: boolean;
+    onHoverStart: () => void;
+    onHoverEnd: () => void;
+    isAnyHovered: boolean;
+}> = ({ project, onClick, isHovered, onHoverStart, onHoverEnd, isAnyHovered }) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const { playHover, playClick } = useSound();
+  const [isMobile, setIsMobile] = useState(true);
+  const { playHover, playClick, triggerHaptic } = useSound();
   const { theme } = useTheme();
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+  }, []);
 
   const currentImage = theme === 'dark' ? project.image.dark : project.image.light;
 
@@ -90,38 +101,57 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
   const rotateY = useSpring(useTransform(x, [-100, 100], [-5, 5]), { stiffness: 400, damping: 30 });
 
   function handleMouse(e: React.MouseEvent<HTMLDivElement>) {
+    if (isMobile) return;
     const rect = e.currentTarget.getBoundingClientRect();
     x.set(e.clientX - (rect.left + rect.width / 2));
     y.set(e.clientY - (rect.top + rect.height / 2));
   }
 
-  // Dynamic Text Shadow
-  const textShadowX = useTransform(x, [-200, 200], [8, -8]);
-  const textShadowY = useTransform(y, [-200, 200], [8, -8]);
-  
   const techStack = ['React', 'TypeScript', 'Node.js', 'AWS']; 
 
   return (
     <motion.div
-      layout
-      style={{ rotateX, rotateY, perspective: 1000 }}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      animate={{ 
+          opacity: isAnyHovered && !isHovered ? 0.3 : 1, 
+          scale: isAnyHovered && !isHovered ? 0.95 : 1,
+          filter: isAnyHovered && !isHovered ? "blur(2px) grayscale(0.5)" : "blur(0px) grayscale(0)"
+      }}
+      style={{ 
+        rotateX: isMobile ? 0 : rotateX, 
+        rotateY: isMobile ? 0 : rotateY, 
+        perspective: 1000 
+      }}
       onMouseMove={handleMouse}
-      onMouseLeave={() => { x.set(0); y.set(0); setIsHovered(false); }}
-      onMouseEnter={() => { setIsHovered(true); playHover(); }}
-      onClick={() => { onClick(); playClick(); }}
+      onMouseLeave={() => { x.set(0); y.set(0); onHoverEnd(); }}
+      onMouseEnter={() => { onHoverStart(); if(!isMobile) playHover(); triggerHaptic(2); }}
+      onClick={() => { onClick(); playClick(); triggerHaptic(10); }}
       data-cursor="magnetic" 
-      className="group relative h-[380px] md:h-[450px] rounded-[2rem] overflow-hidden cursor-none border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-cyber-dark transform-style-3d shadow-xl hover:shadow-2xl transition-all duration-500 hover:border-cyan-500/50"
+      className="group relative h-[380px] md:h-[450px] rounded-[2rem] overflow-hidden cursor-none border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-cyber-dark transform-style-3d shadow-xl hover:shadow-2xl transition-all duration-500 hover:border-cyan-500/50 hover:z-20"
     >
-      {/* Laser Scan Animation */}
+      {/* RGB Shift Effects (Chromatic Aberration) on Hover */}
       <motion.div 
-         className="absolute w-full h-[2px] bg-cyan-400 z-50 opacity-0 group-hover:opacity-100"
-         animate={isHovered ? { top: ['0%', '100%'], opacity: [0, 1, 0] } : {}}
-         transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-         style={{ boxShadow: '0 0 10px #22d3ee' }}
+         className="absolute inset-0 z-0 bg-cover bg-center opacity-50 mix-blend-screen pointer-events-none"
+         style={{ 
+             backgroundImage: `url(${currentImage})`,
+             x: useTransform(x, [-100, 100], [-5, 5]),
+             filter: 'hue-rotate(90deg)'
+         }}
+         animate={{ opacity: isHovered ? 0.4 : 0 }}
+      />
+      <motion.div 
+         className="absolute inset-0 z-0 bg-cover bg-center opacity-50 mix-blend-screen pointer-events-none"
+         style={{ 
+             backgroundImage: `url(${currentImage})`,
+             x: useTransform(x, [-100, 100], [5, -5]),
+             filter: 'hue-rotate(-90deg)'
+         }}
+         animate={{ opacity: isHovered ? 0.4 : 0 }}
       />
 
       <div className="absolute inset-0 z-0 bg-slate-900 overflow-hidden">
-        {/* Main Image */}
         <motion.img 
             key={currentImage}
             src={currentImage} 
@@ -135,31 +165,33 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
             }}
             transition={{ duration: 0.7 }}
         />
+        {/* Holographic Grain Overlay */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay"
+             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E")` }} 
+        />
       </div>
 
       <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent z-10" />
 
-      {/* ENHANCED GLARE EFFECT - PULSING */}
+      {/* ENHANCED GLARE EFFECT */}
       <motion.div 
         className="absolute inset-0 z-20 pointer-events-none mix-blend-overlay"
         animate={isHovered ? {
-            backgroundPosition: ["0% 0%", "100% 100%"],
-            opacity: [0.3, 0.7, 0.3]
+            backgroundPosition: ["0% 0%", "200% 200%"],
+            opacity: [0.2, 0.6, 0.2]
         } : {
             backgroundPosition: ["0% 50%", "100% 50%"],
             opacity: [0.05, 0.15, 0.05]
         }}
         transition={{
-            backgroundPosition: { duration: isHovered ? 3 : 8, repeat: Infinity, ease: "linear" },
-            opacity: { duration: isHovered ? 1.5 : 4, repeat: Infinity, ease: "easeInOut" }
+            backgroundPosition: { duration: isHovered ? 1.5 : 8, repeat: Infinity, ease: isHovered ? "easeOut" : "linear" },
+            opacity: { duration: isHovered ? 1 : 4, repeat: Infinity, ease: "easeInOut" }
         }}
         style={{
             background: isHovered 
-                ? "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.8) 45%, rgba(6,182,212,0.6) 50%, transparent 54%)"
+                ? "linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.0) 30%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.0) 70%, transparent 100%)"
                 : "linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.1) 50%, transparent 80%)",
             backgroundSize: "200% 200%",
-            x: useTransform(x, [-100, 100], [-20, 20]),
-            y: useTransform(y, [-100, 100], [-20, 20]),
         }}
       />
 
@@ -183,17 +215,9 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
             animate={isHovered ? { y: 0, opacity: 1 } : { y: 10, opacity: 0.8 }}
             transition={{ duration: 0.5 }}
           >
-              <motion.h3 
-                className="text-2xl md:text-3xl font-bold text-white font-display tracking-tight drop-shadow-lg"
-                style={{ 
-                textShadow: useTransform(
-                    [textShadowX, textShadowY],
-                    ([sX, sY]: any) => isHovered ? `${sX}px ${sY}px 20px rgba(0,0,0,0.8)` : '0px 0px 0px rgba(0,0,0,0)'
-                )
-                }}
-              >
+              <h3 className="text-2xl md:text-3xl font-bold text-white font-display tracking-tight drop-shadow-lg">
                 {project.headline}
-              </motion.h3>
+              </h3>
           </motion.div>
           
           <div className="overflow-hidden">
@@ -218,11 +242,10 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
 };
 
 const Modal = ({ selectedId, onClose, selectedProject }: { selectedId: string, onClose: () => void, selectedProject: Project }) => {
-    // Portal to body to avoid transform clipping
+    const { theme } = useTheme();
+    
     if (typeof document === 'undefined') return null;
     
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { theme } = useTheme();
     const currentImage = theme === 'dark' ? selectedProject.image.dark : selectedProject.image.light;
     
     return createPortal(
@@ -274,50 +297,50 @@ const Modal = ({ selectedId, onClose, selectedProject }: { selectedId: string, o
 const ProjectGrid: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState('ALL');
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  
   const selectedProject = projects.find(p => p.id === selectedId);
-  const { playClick } = useSound();
+  const { playClick, triggerHaptic } = useSound();
 
   const filteredProjects = projects.filter(p => filter === 'ALL' || p.badge === filter);
 
   return (
     <section id="projects" className="py-24 md:py-32 px-4 md:px-6 w-full relative z-10">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-12 md:mb-16 flex flex-col items-center text-center">
-           <motion.div 
-             initial={{ opacity: 0, y: 20 }}
-             whileInView={{ opacity: 1, y: 0 }}
-             className="flex items-center gap-2 mb-4"
-           >
-             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-             <span className="text-[10px] font-mono text-cyan-700 dark:text-cyan-400 tracking-[1em] uppercase">Portfolio_Index</span>
-           </motion.div>
-           
-           <h2 className="text-4xl md:text-5xl lg:text-7xl font-bold text-slate-900 dark:text-white font-display uppercase tracking-tight mb-8">
-             Selected Works
-           </h2>
-           
-           {/* Filters */}
-           <div className="flex flex-wrap justify-center gap-2">
-                {categories.map((cat) => (
-                    <button
-                        key={cat}
-                        onClick={() => { setFilter(cat); playClick(); }}
-                        className={`px-4 py-2 rounded-full text-[10px] font-mono tracking-wider border transition-all duration-300 
-                            ${filter === cat 
-                                ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg shadow-cyan-500/20' 
-                                : 'bg-transparent text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:border-cyan-500/50 hover:text-cyan-600 dark:hover:text-cyan-400'
-                            }`}
-                    >
-                        {cat}
-                    </button>
-                ))}
-           </div>
+        <SectionHeading 
+            title="Selected Works" 
+            subtitle="Portfolio_Index" 
+            icon={<FolderGit2 size={14} />} 
+        />
+
+        <div className="mb-12 flex flex-wrap justify-center gap-2">
+            {categories.map((cat) => (
+                <button
+                    key={cat}
+                    onClick={() => { setFilter(cat); playClick(); triggerHaptic(5); }}
+                    className={`px-4 py-2 rounded-full text-[10px] font-mono tracking-wider border transition-all duration-300 
+                        ${filter === cat 
+                            ? 'bg-cyan-500 text-white border-cyan-500 shadow-lg shadow-cyan-500/20' 
+                            : 'bg-transparent text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:border-cyan-500/50 hover:text-cyan-600 dark:hover:text-cyan-400'
+                        }`}
+                >
+                    {cat}
+                </button>
+            ))}
         </div>
 
         <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           <AnimatePresence>
             {filteredProjects.map(p => (
-                <ProjectCard key={p.id} project={p} onClick={() => setSelectedId(p.id)} />
+                <ProjectCard 
+                    key={p.id} 
+                    project={p} 
+                    onClick={() => setSelectedId(p.id)}
+                    isHovered={hoveredId === p.id}
+                    onHoverStart={() => setHoveredId(p.id)}
+                    onHoverEnd={() => setHoveredId(null)}
+                    isAnyHovered={hoveredId !== null}
+                />
             ))}
           </AnimatePresence>
         </motion.div>
@@ -327,7 +350,7 @@ const ProjectGrid: React.FC = () => {
               <Modal 
                 selectedId={selectedId} 
                 selectedProject={selectedProject} 
-                onClose={() => { setSelectedId(null); playClick(); }} 
+                onClose={() => { setSelectedId(null); playClick(); triggerHaptic(5); }} 
               />
           )}
         </AnimatePresence>

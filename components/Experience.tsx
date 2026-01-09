@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Briefcase, Calendar, Cpu } from 'lucide-react';
+import SectionHeading from './SectionHeading';
 
 const experiences = [
   {
@@ -90,19 +91,11 @@ const Experience: React.FC = () => {
   return (
     <section id="experience" className="py-20 md:py-32 w-full relative z-10 overflow-hidden">
         <div className="max-w-5xl mx-auto px-4">
-            <div className="flex flex-col items-center mb-16 text-center">
-                <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 text-cyan-600 dark:text-cyan-400 font-mono text-xs tracking-[0.3em] uppercase mb-4"
-                >
-                    <Cpu size={14} />
-                    <span>Operations_Log</span>
-                </motion.div>
-                <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white font-display">
-                    Mission Timeline
-                </h2>
-            </div>
+            <SectionHeading 
+                title="Mission Timeline"
+                subtitle="Operations_Log"
+                icon={<Cpu size={14} />}
+            />
 
             <div className="relative">
                 {/* Vertical Line */}

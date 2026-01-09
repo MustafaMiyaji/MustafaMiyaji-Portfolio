@@ -1,194 +1,180 @@
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { Terminal, Bot, User, Cpu, Download } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Terminal, Bot, ChevronRight, Cpu, Shield, Wifi, Activity } from 'lucide-react';
 import { useSound } from './SoundManager';
 
-const RESUME_LINK = "https://drive.google.com/file/d/1hdW7tMXtyiVWKSYdjIoUg0fS_d2Jv7Ri/view?usp=sharing";
-
-const messagesData = [
-  { 
-    id: 1, 
-    user: 'AI', 
-    text: "Neural verification successful. Initializing Miyaji_Archive...", 
-    icon: <Bot size={16} /> 
-  },
-  { 
-    id: 2, 
-    user: 'Mustafa', 
-    text: "Lead Cloud Architect & Backend Developer. Specialized in automated container orchestration (K8s) and scalable API architectures.", 
-    icon: <User size={16} /> 
-  },
-  { 
-    id: 3, 
-    user: 'System', 
-    text: "METRIC: 99.99% Infrastructure Uptime achieved across enterprise nodes. Secured via Hardened CI/CD pipelines.", 
-    isSystem: true 
-  },
-  { 
-    id: 4, 
-    user: 'Mustafa', 
-    text: "Current Research: Neural networks in predictive DevOps and decentralizing hybrid-cloud security layers.", 
-    icon: <Cpu size={16} /> 
-  }
+const messages = [
+  { id: 1, text: "Initializing identity protocol...", sender: 'system' },
+  { id: 2, text: "Identity Verified: Mustafa Miyaji", sender: 'bot' },
+  { id: 3, text: "Role: Lead Cloud Architect & Neural Grid Architect", sender: 'bot' },
+  { id: 4, text: "Mission: To construct resilient, self-healing digital infrastructures.", sender: 'bot' },
+  { id: 5, text: "Stack analysis complete. Loading modules: Kubernetes, Terraform, React, Node.js.", sender: 'system' },
+  { id: 6, text: "Current Status: Open for high-priority contracts.", sender: 'bot' },
 ];
 
-const TypingIndicator = () => (
-  <motion.div 
-    initial={{ opacity: 0 }} 
-    animate={{ opacity: 1 }} 
-    exit={{ opacity: 0 }}
-    className="flex items-center gap-1 p-4 rounded-2xl rounded-tl-none bg-purple-500/10 border border-purple-500/20 w-16 h-10"
-  >
-    <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} className="w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full" />
-    <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full" />
-    <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full" />
-  </motion.div>
+const SidebarItem: React.FC<{ icon: React.ReactNode; label: string; value: string; color: string }> = ({ icon, label, value, color }) => (
+    <div className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/5">
+        <div className={`p-1.5 rounded bg-${color}-500/20 text-${color}-400`}>
+            {icon}
+        </div>
+        <div className="flex flex-col">
+            <span className="text-[8px] font-mono text-slate-500 uppercase tracking-wider">{label}</span>
+            <span className="text-[10px] font-mono text-slate-300">{value}</span>
+        </div>
+    </div>
 );
 
-const messageVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (isSystem: boolean) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: isSystem ? 1.5 : 0.5,
-      ease: "easeOut"
-    }
-  })
-};
-
 const AboutChat: React.FC = () => {
-  const [visibleMessages, setVisibleMessages] = useState<typeof messagesData>([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
-  const { playSuccess } = useSound();
+    const [visibleMessages, setVisibleMessages] = useState<typeof messages>([]);
+    const [isTyping, setIsTyping] = useState(true);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const { playKeystroke, playSuccess } = useSound();
 
-  const onInView = () => {
-    if (hasStarted) return;
-    setHasStarted(true);
-    let delay = 0;
-    
-    messagesData.forEach((msg, index) => {
-      delay += 800; 
-      
-      if (msg.user === 'AI' || msg.isSystem) {
-         setTimeout(() => setIsTyping(true), delay);
-         delay += 1200; 
-         setTimeout(() => {
-           setIsTyping(false);
-           setVisibleMessages(prev => [...prev, msg]);
-           if (index === messagesData.length - 1) playSuccess();
-         }, delay);
-      } else {
-         setTimeout(() => {
-           setVisibleMessages(prev => [...prev, msg]);
-         }, delay);
-      }
-    });
-  };
+    // Auto-scroll logic restricted to the chat container
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [visibleMessages, isTyping]);
 
-  return (
-    <section id="about" className="py-24 md:py-40 px-4 max-w-5xl mx-auto w-full relative z-10">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        onViewportEnter={onInView}
-        viewport={{ once: true, amount: 0.3 }}
-        className="bg-white dark:bg-black/40 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-6 md:p-12 shadow-xl dark:shadow-2xl relative overflow-hidden min-h-[600px]"
-      >
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent animate-shimmer" />
+    useEffect(() => {
+        let currentIdx = 0;
         
-        <div className="flex items-center justify-between mb-8 md:mb-12 pb-6 border-b border-slate-200 dark:border-white/5">
-          <div className="flex items-center gap-4">
-            <div className="flex gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-              <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-            </div>
-            <span className="hidden xs:flex items-center gap-2 text-[10px] font-mono text-cyan-700 dark:text-cyan-500/50 uppercase tracking-widest">
-              <Terminal size={12} /> protocol_identity.sh
-            </span>
-          </div>
-          
-          <a 
-            href={RESUME_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-cursor="magnetic"
-            className="flex items-center gap-2 text-[10px] font-mono text-slate-500 hover:text-cyan-500 transition-colors border border-slate-700 rounded px-2 py-1 group"
-          >
-             <Download size={10} className="group-hover:animate-bounce" /> DOWNLOAD_RESUME
-          </a>
-        </div>
+        const showNextMessage = () => {
+            if (currentIdx >= messages.length) {
+                setIsTyping(false);
+                return;
+            }
 
-        <div className="space-y-8 md:space-y-10">
-          {visibleMessages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              custom={msg.isSystem}
-              variants={messageVariants}
-              initial="hidden"
-              animate="visible"
-              className={`flex items-start gap-3 md:gap-6 ${msg.user === 'Mustafa' ? 'flex-row-reverse' : 'flex-row'}`}
-            >
-              {!msg.isSystem && (
-                <div className={`w-8 h-8 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shrink-0 border shadow-lg
-                    ${msg.user === 'Mustafa' 
-                      ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30' 
-                      : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30'}`}
+            setIsTyping(true);
+            const msg = messages[currentIdx];
+            
+            // Random typing delay based on length
+            const typingTime = 500 + Math.random() * 800;
+
+            setTimeout(() => {
+                setVisibleMessages(prev => [...prev, msg]);
+                playSuccess();
+                currentIdx++;
+                showNextMessage();
+            }, typingTime);
+        };
+
+        const initialDelay = setTimeout(showNextMessage, 1000);
+        return () => clearTimeout(initialDelay);
+    }, []);
+
+    return (
+        <section id="about" className="py-24 md:py-32 px-4 max-w-6xl mx-auto w-full relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[600px]">
+                
+                {/* Left Panel: Stats (Hidden on mobile) */}
+                <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    className="hidden lg:flex flex-col gap-4 p-4 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-2xl h-full"
                 >
-                  {msg.icon}
-                </div>
-              )}
-              
-              <div className={`max-w-[85%] md:max-w-[70%] p-4 md:p-6 rounded-3xl text-sm md:text-base leading-relaxed group transition-all duration-300 shadow-sm
-                ${msg.isSystem ? 'w-full text-center bg-transparent border-0 shadow-none text-slate-500 dark:text-slate-500 font-mono text-[10px] my-2 md:my-4 tracking-wider italic' : ''}
-                ${!msg.isSystem && msg.user === 'Mustafa' 
-                  ? 'bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/20 text-cyan-900 dark:text-cyan-50 rounded-tr-none' 
-                  : !msg.isSystem ? 'bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 text-purple-900 dark:text-purple-50 rounded-tl-none' : ''}
-              `}>
-                <div className="flex flex-col gap-2">
-                   {msg.text}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-          
-          <AnimatePresence>
-            {isTyping && (
-                <div className="flex items-start gap-3 md:gap-6">
-                    <div className="w-8 h-8 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shrink-0 border shadow-lg bg-purple-500/10 text-purple-400 border-purple-500/30">
-                        <Bot size={16} />
+                    <div className="flex items-center gap-2 mb-4 pb-4 border-b border-white/10">
+                        <Activity size={16} className="text-cyan-500 animate-pulse" />
+                        <span className="text-xs font-mono text-slate-300">SYSTEM_METRICS</span>
                     </div>
-                    <TypingIndicator />
-                </div>
-            )}
-          </AnimatePresence>
-        </div>
+                    
+                    <SidebarItem icon={<Cpu size={14} />} label="CPU Usage" value="12% / 3.4GHz" color="cyan" />
+                    <SidebarItem icon={<Shield size={14} />} label="Encryption" value="AES-256-GCM" color="purple" />
+                    <SidebarItem icon={<Wifi size={14} />} label="Latency" value="24ms (Stable)" color="green" />
+                    
+                    <div className="mt-auto p-4 bg-cyan-900/10 border border-cyan-500/20 rounded-xl relative overflow-hidden">
+                        <div className="absolute inset-0 bg-cyan-500/5 animate-pulse" />
+                        <span className="text-[10px] font-mono text-cyan-400 block mb-2">NEURAL_SYNC</span>
+                        <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                            <motion.div 
+                                className="h-full bg-cyan-500"
+                                animate={{ width: ["0%", "100%"] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                            />
+                        </div>
+                    </div>
+                </motion.div>
 
-        <div className="mt-12 md:mt-16 pt-8 border-t border-slate-200 dark:border-white/5 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-           {[
-             { label: "Uptime", val: "99.9%" },
-             { label: "Deployment", val: "Automated" },
-             { label: "Security", val: "Zero-Trust" },
-             { label: "Status", val: "Active" }
-           ].map((stat, i) => (
-             <motion.div 
-               key={i} 
-               initial={{ opacity: 0 }}
-               whileInView={{ opacity: 1 }}
-               transition={{ delay: 1 + (i * 0.1) }}
-               className="flex flex-col gap-1"
-             >
-                <span className="text-[8px] font-mono text-slate-400 dark:text-white/30 uppercase tracking-[0.3em]">{stat.label}</span>
-                <span className="text-xs font-mono text-cyan-600 dark:text-cyan-500 font-bold">{stat.val}</span>
-             </motion.div>
-           ))}
-        </div>
-      </motion.div>
-    </section>
-  );
+                {/* Main Chat Terminal */}
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    className="lg:col-span-3 bg-slate-950/90 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col relative"
+                >
+                    {/* Glass Reflection */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[100px] pointer-events-none" />
+
+                    {/* Header */}
+                    <div className="bg-slate-900/50 p-4 border-b border-white/5 flex justify-between items-center relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="flex gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+                            </div>
+                            <div className="h-4 w-[1px] bg-white/10 mx-1" />
+                            <span className="text-xs font-mono text-slate-400 flex items-center gap-2">
+                                <Terminal size={12} className="text-cyan-500" /> 
+                                protocol_chat_v1.0.sh
+                            </span>
+                        </div>
+                        <div className="px-2 py-1 rounded bg-green-500/10 border border-green-500/20 text-[9px] font-mono text-green-400 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            SECURE_CONN
+                        </div>
+                    </div>
+
+                    {/* Chat Area */}
+                    <div 
+                        ref={scrollRef}
+                        className="flex-1 overflow-y-auto p-6 space-y-6 font-mono text-sm custom-scrollbar relative z-10"
+                    >
+                        {visibleMessages.map((msg) => (
+                            <motion.div
+                                key={msg.id}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className={`flex gap-4 group ${msg.sender === 'system' ? 'opacity-60 my-8 pl-4 border-l-2 border-slate-700' : ''}`}
+                            >
+                                {msg.sender !== 'system' && (
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border 
+                                        ${msg.sender === 'bot' ? 'bg-cyan-950/30 border-cyan-500/30 text-cyan-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                                        {msg.sender === 'bot' ? <Bot size={16} /> : <ChevronRight size={16} />}
+                                    </div>
+                                )}
+                                
+                                <div className="flex flex-col gap-1 max-w-[85%]">
+                                    <span className={`text-[10px] uppercase tracking-wider font-bold ${msg.sender === 'bot' ? 'text-cyan-600' : 'text-slate-500'}`}>
+                                        {msg.sender}
+                                    </span>
+                                    <p className={`${msg.sender === 'bot' ? 'text-slate-200 leading-relaxed' : 'text-slate-400 italic text-xs'}`}>
+                                        {msg.text}
+                                    </p>
+                                </div>
+                            </motion.div>
+                        ))}
+                        
+                        {isTyping && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4 items-center">
+                                 <div className="w-8 h-8 flex items-center justify-center shrink-0 text-cyan-500/50">
+                                    <Bot size={16} />
+                                </div>
+                                <div className="flex items-center gap-1 h-6 px-3 py-1 rounded-full bg-cyan-900/10 border border-cyan-500/10">
+                                    <span className="text-[10px] text-cyan-500 font-mono animate-pulse">DECRYPTING_PACKET...</span>
+                                    <span className="w-1 h-3 bg-cyan-500/50 ml-1 animate-blink" />
+                                </div>
+                            </motion.div>
+                        )}
+                    </div>
+                </motion.div>
+            </div>
+        </section>
+    );
 };
 
 export default AboutChat;

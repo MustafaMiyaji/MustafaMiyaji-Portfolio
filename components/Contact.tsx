@@ -1,10 +1,61 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, CheckCircle, AlertCircle, Loader2, Phone, Mail, User, FileText, Wifi } from 'lucide-react';
 import { useSound } from './SoundManager';
 
 const ACCESS_KEY = "6530beca-8de6-4201-b370-a342a6201a13";
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+
+const EncryptedInput = ({ icon: Icon, type, name, placeholder, required }: any) => {
+    const [value, setValue] = useState("");
+    const [displayValue, setDisplayValue] = useState("");
+    const [isFocused, setIsFocused] = useState(false);
+    const { playKeystroke } = useSound();
+    const intervalRef = useRef<any>(null);
+
+    // Scramble effect on blur
+    useEffect(() => {
+        if (!isFocused && value.length > 0) {
+            let iteration = 0;
+            clearInterval(intervalRef.current);
+            intervalRef.current = setInterval(() => {
+                setDisplayValue(value.split("").map((_, index) => {
+                    if (index < iteration) return value[index]; // Actually, let's keep it masked
+                    return CHARS[Math.floor(Math.random() * CHARS.length)];
+                }).join(""));
+                
+                if (iteration >= value.length) { 
+                    clearInterval(intervalRef.current);
+                    // Final state for blurred input: partially masked or fully masked
+                    setDisplayValue(value.replace(/./g, '•')); 
+                }
+                iteration += 1/3;
+            }, 30);
+        } else {
+            clearInterval(intervalRef.current);
+            setDisplayValue(value);
+        }
+    }, [isFocused, value]);
+
+    return (
+        <div className="relative group">
+            <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-cyan-500 transition-colors" size={16} />
+            <input 
+                type={type}
+                name={name}
+                required={required}
+                value={isFocused ? value : displayValue}
+                onChange={(e) => { setValue(e.target.value); playKeystroke(); }}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700 font-mono"
+                placeholder={placeholder}
+                autoComplete="off"
+            />
+        </div>
+    );
+}
 
 export default function Contact() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
@@ -165,48 +216,18 @@ export default function Contact() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="group relative">
                                     <label className="block text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-cyan-500 transition-colors">Operative Name</label>
-                                    <div className="relative">
-                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-cyan-500 transition-colors" size={16} />
-                                        <input 
-                                            type="text" 
-                                            name="name" 
-                                            required 
-                                            onKeyDown={playKeystroke}
-                                            className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
-                                            placeholder="Agent Cipher"
-                                        />
-                                    </div>
+                                    <EncryptedInput icon={User} type="text" name="name" placeholder="Agent Cipher" required />
                                 </div>
                                 <div className="group relative">
                                     <label className="block text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-purple-500 transition-colors">Comm Frequency (Email)</label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-purple-500 transition-colors" size={16} />
-                                        <input 
-                                            type="email" 
-                                            name="email" 
-                                            required 
-                                            onKeyDown={playKeystroke}
-                                            className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
-                                            placeholder="signals@void.net"
-                                        />
-                                    </div>
+                                    <EncryptedInput icon={Mail} type="email" name="email" placeholder="signals@void.net" required />
                                 </div>
                             </div>
 
                             {/* Row 2: Phone Number */}
                             <div className="group relative">
                                 <label className="block text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-cyan-500 transition-colors">Secured Line</label>
-                                <div className="relative">
-                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-cyan-500 transition-colors" size={16} />
-                                    <input 
-                                        type="tel" 
-                                        name="number" 
-                                        required 
-                                        onKeyDown={playKeystroke}
-                                        className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
-                                        placeholder="Encrypted Channel ID"
-                                    />
-                                </div>
+                                <EncryptedInput icon={Phone} type="tel" name="number" placeholder="Encrypted Channel ID" required />
                             </div>
 
                             {/* Row 3: Description with Signal Strength */}
@@ -229,9 +250,8 @@ export default function Contact() {
                                         name="description" 
                                         required 
                                         rows={4}
-                                        onChange={(e) => setDescLength(e.target.value.length)}
-                                        onKeyDown={playKeystroke}
-                                        className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all resize-none placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                                        onChange={(e) => { setDescLength(e.target.value.length); playKeystroke(); }}
+                                        className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all resize-none placeholder:text-slate-300 dark:placeholder:text-slate-700 font-mono"
                                         placeholder="Requesting extraction coordinates for Project Alpha..."
                                     ></textarea>
                                 </div>

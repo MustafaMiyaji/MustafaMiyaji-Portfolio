@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 
 const SYMBOLS = "λ Ω Δ Σ Φ Ψ 0 1 Ξ Π Γ";
@@ -9,13 +9,12 @@ const Preloader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [glitchText, setGlitchText] = useState("");
 
   useEffect(() => {
+    // Only run if not complete
+    if (percent >= 100) return;
+
     const timer = setInterval(() => {
       setPercent(p => {
-        if (p >= 100) {
-          clearInterval(timer);
-          setTimeout(onComplete, 800);
-          return 100;
-        }
+        if (p >= 100) return 100;
         return p + Math.floor(Math.random() * 3) + 1;
       });
     }, 30);
@@ -32,7 +31,23 @@ const Preloader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
       clearInterval(timer);
       clearInterval(glitchInterval);
     };
-  }, [onComplete]);
+  }, [percent]);
+
+  useEffect(() => {
+    if (percent >= 100) {
+        const timeout = setTimeout(onComplete, 800);
+        return () => clearTimeout(timeout);
+    }
+  }, [percent, onComplete]);
+
+  // Memoize random symbols to prevent re-generation during renders
+  const backgroundSymbols = useMemo(() => {
+      return Array.from({ length: 800 }).map((_, i) => ({
+          key: i,
+          char: SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+          delay: Math.random() * 2
+      }));
+  }, []);
 
   return (
     <motion.div 
@@ -42,9 +57,9 @@ const Preloader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     >
       {/* Background Matrix-style symbols */}
       <div className="absolute inset-0 opacity-[0.05] text-[10px] flex flex-wrap gap-2 p-4 pointer-events-none select-none overflow-hidden content-start">
-         {Array.from({ length: 800 }).map((_, i) => (
-           <span key={i} className="animate-pulse" style={{ animationDelay: `${Math.random() * 2}s` }}>
-              {SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]}
+         {backgroundSymbols.map((item) => (
+           <span key={item.key} className="animate-pulse" style={{ animationDelay: `${item.delay}s` }}>
+              {item.char}
            </span>
          ))}
       </div>

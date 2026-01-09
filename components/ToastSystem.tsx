@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, CheckCircle, Info, X } from 'lucide-react';
 
@@ -16,6 +16,28 @@ interface ToastContextType {
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+const LETTERS_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+
+const DecryptText = ({ text }: { text: string }) => {
+    const [display, setDisplay] = useState(text.split('').map(() => ' '));
+    
+    useEffect(() => {
+        let iteration = 0;
+        const interval = setInterval(() => {
+            setDisplay(text.split("").map((letter, index) => {
+                if(index < iteration) return text[index];
+                return LETTERS_POOL[Math.floor(Math.random() * LETTERS_POOL.length)];
+            }));
+            
+            if(iteration >= text.length) clearInterval(interval);
+            iteration += 1; // Fast decryption
+        }, 20);
+        return () => clearInterval(interval);
+    }, [text]);
+
+    return <span>{display.join('')}</span>;
+};
 
 export const useToast = () => {
   const context = useContext(ToastContext);
@@ -57,7 +79,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               
               <div className="flex flex-col flex-1">
                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">System Message</span>
-                 <span className="text-sm text-white font-medium">{toast.message}</span>
+                 <span className="text-sm text-white font-medium font-mono">
+                    <DecryptText text={toast.message} />
+                 </span>
               </div>
               
               <button onClick={() => removeToast(toast.id)} className="text-slate-500 hover:text-white">

@@ -30,11 +30,12 @@ const AudioVisualizer = ({ active }: { active: boolean }) => (
 const Navbar: React.FC = () => {
   const [activeId, setActiveId] = useState('hero');
   const [time, setTime] = useState('');
-  const { playClick, toggleMute, isMuted } = useSound();
+  const { playClick, toggleMute, isMuted, triggerHaptic } = useSound();
   const { theme, toggleTheme } = useTheme();
 
   const scrollToSection = (id: string) => {
     playClick();
+    triggerHaptic(10);
     setActiveId(id);
     if (id === 'hero') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -76,6 +77,7 @@ const Navbar: React.FC = () => {
   }, []);
 
   const triggerCommandPalette = () => {
+      triggerHaptic(15);
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
   };
 
@@ -94,7 +96,7 @@ const Navbar: React.FC = () => {
             </div>
 
             <button 
-                onClick={() => { playClick(); toggleTheme(); }}
+                onClick={() => { playClick(); toggleTheme(); triggerHaptic(5); }}
                 className="p-2 rounded-full bg-slate-100/50 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-white transition-colors shadow-sm pointer-events-auto"
                 aria-label="Toggle Theme"
             >
@@ -102,7 +104,7 @@ const Navbar: React.FC = () => {
             </button>
 
             <button 
-                onClick={() => { playClick(); toggleMute(); }}
+                onClick={() => { playClick(); toggleMute(); triggerHaptic(5); }}
                 className="flex items-center gap-2 px-3 py-2 rounded-full bg-slate-100/50 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-white transition-colors shadow-sm pointer-events-auto"
                 aria-label="Toggle Sound"
             >
@@ -119,11 +121,14 @@ const Navbar: React.FC = () => {
             className="fixed bottom-6 md:bottom-8 inset-x-0 z-[999] flex justify-center pointer-events-none"
         >
             <div className="pointer-events-auto flex items-center gap-1 md:gap-2 p-1.5 md:p-2 rounded-full bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl shadow-cyan-500/10 dark:ring-1 dark:ring-white/5 max-w-[95vw] overflow-x-auto no-scrollbar">
-                {navItems.map((item) => {
+                {navItems.map((item, index) => {
                 const isActive = activeId === item.id;
                 return (
                     <motion.button
                     key={item.id}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 2.2 + (index * 0.1), type: "spring" }} // Boot Sequence Animation
                     onClick={() => scrollToSection(item.id)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -156,6 +161,9 @@ const Navbar: React.FC = () => {
                 <div className="w-[1px] h-6 bg-slate-300 dark:bg-white/10 mx-1 shrink-0" />
                 
                 <motion.button
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 2.8, type: "spring" }}
                     onClick={triggerCommandPalette}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

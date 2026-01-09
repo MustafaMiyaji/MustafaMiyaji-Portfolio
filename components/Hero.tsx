@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { motion, useTransform, useScroll, useMotionValueEvent, useMotionValue, useSpring, MotionValue } from 'framer-motion';
-import { ArrowDown, Shield, Scan, Lock, Unlock, Zap } from 'lucide-react';
+import { ArrowDown, Shield, Scan, Lock, Unlock, Zap, Mouse } from 'lucide-react';
 import { useSound } from './SoundManager';
 
 const LETTERS_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ΞΠΣΩλΔ∇ΦΨ";
@@ -13,9 +13,10 @@ interface ScrambleCharProps {
   mouseX: MotionValue<number>;
   mouseY: MotionValue<number>;
   triggerGlitch: boolean;
+  isMobile: boolean;
 }
 
-const ScrambleChar: React.FC<ScrambleCharProps> = ({ char, index, progress, mouseX, mouseY, triggerGlitch }) => {
+const ScrambleChar: React.FC<ScrambleCharProps> = ({ char, index, progress, mouseX, mouseY, triggerGlitch, isMobile }) => {
   const [displayChar, setDisplayChar] = useState(char);
   const [isLocked, setIsLocked] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -52,8 +53,10 @@ const ScrambleChar: React.FC<ScrambleCharProps> = ({ char, index, progress, mous
   const finalX = useTransform([x, xSpring], ([latestX, latestSpring]) => (latestX as number) + (latestSpring as number));
   const finalY = useTransform([y, ySpring], ([latestY, latestSpring]) => (latestY as number) + (latestSpring as number));
 
-  // Dodge Logic Loop
+  // Dodge Logic Loop - DISABLED ON MOBILE
   useEffect(() => {
+      if (isMobile) return;
+      
       const unsubscribeX = mouseX.on("change", (latestX) => {
           if (!ref.current) return;
           const rect = ref.current.getBoundingClientRect();
@@ -79,12 +82,13 @@ const ScrambleChar: React.FC<ScrambleCharProps> = ({ char, index, progress, mous
           }
       });
       return () => unsubscribeX();
-  }, [mouseX, mouseY, xForce, yForce]);
+  }, [mouseX, mouseY, xForce, yForce, isMobile]);
 
   // Glitch Effect
   useEffect(() => {
     if (char === " ") return;
     let interval: ReturnType<typeof setInterval>;
+    
     if (triggerGlitch) {
         let count = 0;
         const maxCount = 8 + Math.random() * 5;
@@ -123,9 +127,9 @@ const ScrambleChar: React.FC<ScrambleCharProps> = ({ char, index, progress, mous
     <motion.div
       ref={ref}
       className="relative inline-block transform-style-3d will-change-transform"
-      style={{ x: finalX, y: finalY, z, rotate, opacity }}
+      style={{ x: isMobile ? x : finalX, y: isMobile ? y : finalY, z, rotate, opacity }}
     >
-      <span className="text-[1.8rem] xs:text-[2.2rem] sm:text-6xl md:text-8xl lg:text-9xl font-black font-display leading-none text-slate-800 dark:text-cyber-text dark:text-white select-none transition-colors duration-500 hover:text-cyan-400">
+      <span className="text-[1.8rem] xs:text-[2.2rem] sm:text-6xl md:text-8xl lg:text-9xl font-black font-display leading-none select-none transition-colors duration-500 hover:text-cyan-400 text-slate-800 dark:text-cyber-text dark:text-white">
         {char === " " ? "\u00A0" : displayChar}
       </span>
     </motion.div>
@@ -162,9 +166,14 @@ const Hero: React.FC = () => {
   });
 
   const [percent, setPercent] = useState(0);
-  const [isGlitching, setIsGlitching] = useState(true);
+  const [isGlitching, setIsGlitching] = useState(false);
   const [hasScrolledPastHalf, setHasStartedPastHalf] = useState(false);
   const [showAberration, setShowAberration] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+  }, []);
 
   const hudOpacity = useTransform(scrollYProgress, [0.7, 0.85], [1, 0]);
   const gateScale = useTransform(scrollYProgress, [0.85, 1], [1, 0.9]);
@@ -191,17 +200,12 @@ const Hero: React.FC = () => {
   });
 
   useEffect(() => {
-    setIsGlitching(true);
-    const timer = setTimeout(() => {
-        setIsGlitching(false);
-    }, 1500);
     const handleMouseMove = (e: MouseEvent) => {
         mouseX.set(e.clientX);
         mouseY.set(e.clientY);
     };
     window.addEventListener('mousemove', handleMouseMove);
     return () => {
-        clearTimeout(timer);
         window.removeEventListener('mousemove', handleMouseMove);
     };
   }, [mouseX, mouseY]);
@@ -287,6 +291,7 @@ const Hero: React.FC = () => {
                             mouseX={mouseX} 
                             mouseY={mouseY}
                             triggerGlitch={isGlitching}
+                            isMobile={isMobile}
                         />
                     ))}
                 </div>
@@ -322,15 +327,31 @@ const Hero: React.FC = () => {
                         INITIALIZE_UPLINK <Zap size={14} />
                     </span>
                 </motion.button>
-                
+            </motion.div>
+            
+            {/* ENHANCED SCROLL INDICATOR */}
+            <motion.div 
+                className="absolute bottom-10 left-0 right-0 z-50 flex flex-col items-center gap-3 pointer-events-none"
+                style={{ 
+                    opacity: useTransform(scrollYProgress, [0, 0.15], [1, 0]),
+                    y: useTransform(scrollYProgress, [0, 0.15], [0, 20])
+                }}
+            >
                 <motion.div 
-                    className="mt-12 flex flex-col items-center gap-2"
-                    style={{ opacity: useTransform(scrollYProgress, [0.7, 0.8], [1, 0]) }}
-                    animate={{ y: [0, 5, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
+                    animate={{ y: [0, 10, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    className="flex flex-col items-center gap-2"
                 >
-                    <span className="text-[9px] font-mono text-slate-500 dark:text-slate-400 uppercase tracking-[0.5em]">Scroll to Enter</span>
-                    <ArrowDown size={14} className="text-slate-500 dark:text-slate-400" />
+                     <Mouse size={24} className="text-cyan-500 animate-pulse" />
+                     <div className="flex flex-col items-center gap-1">
+                        <span className="text-[10px] font-mono text-cyan-600 dark:text-cyan-400 uppercase tracking-[0.3em] font-bold text-shadow-glow">
+                            System Ready
+                        </span>
+                        <span className="text-[9px] font-mono text-slate-500 dark:text-slate-500 uppercase tracking-widest">
+                            Scroll to Initialize
+                        </span>
+                     </div>
+                     <ArrowDown size={16} className="text-slate-400 dark:text-slate-600 mt-1" />
                 </motion.div>
             </motion.div>
 
